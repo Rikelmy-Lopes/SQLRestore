@@ -1,0 +1,29 @@
+[package]
+name = "sqlrestore-core"
+description = "Business logic, ports and infrastructure adapters for SQLRestore"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+chrono.workspace = true
+postgres.workspace = true
+
+[target.'cfg(target_os = "windows")'.dependencies]
+keyring = { version = "3.6", default-features = false, features = ["windows-native"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+keyring = { version = "3.6", default-features = false, features = ["apple-native"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+keyring = { version = "3.6", default-features = false, features = [
+    "sync-secret-service",
+    "crypto-rust",
+] }
+
+[dev-dependencies]
+tempfile = "3"

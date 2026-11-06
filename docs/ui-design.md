@@ -29,6 +29,7 @@ The theme is saved in `config.json`.
 3. **Backup file:** file path and a button to select the `.sql` file.
 4. **Action:** restore button and cancel button.
 5. **Result area:** progress and success or error message.
+6. **Database recreation:** a checkbox in the connection area enables deleting and recreating the target database before restoring. The confirmation dialog appears before every restore.
 
 ## Layout
 
@@ -53,6 +54,7 @@ The theme is saved in `config.json`.
 ## Behavior
 
 - The restore button is disabled until the connection and the file are filled.
+- When "Delete and recreate the database" is enabled, a confirmation dialog with the database name is shown before each restore.
 - The cancel button is always present. It is enabled only while a restore is running.
 - Cancel stops the restore and shows a translated message.
 - The UI does not freeze during restore (work runs outside the UI thread).

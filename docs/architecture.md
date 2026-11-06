@@ -76,7 +76,8 @@ File `config.json`, saved in the AppData folder of each system:
     "port": 5432,
     "user": "postgres",
     "database": ""
-  }
+  },
+  "recreate_database": false
 }
 ```
 
@@ -109,9 +110,12 @@ Default values:
     "port": 5432,
     "user": "postgres",
     "database": ""
-  }
+  },
+  "recreate_database": false
 }
 ```
+
+`recreate_database` is disabled by default. When enabled, the application connects to the `postgres` maintenance database, terminates open sessions, runs `DROP DATABASE IF EXISTS` and `CREATE DATABASE` on the target database, then restores. The user must confirm the deletion before every restore. The maintenance databases `postgres`, `template0` and `template1` are never deleted.
 
 ## Log
 
@@ -124,7 +128,9 @@ The program writes a log file to find problems after a restore fails.
 | Linux | `~/.config/SQLRestore/logs/sqlrestore.log` |
 
 - Each entry has date, time, level and message.
+- In debug builds each entry is also written to the terminal (stderr).
 - Record the start, end, cancel and errors of each restore. For errors, include the line where it happened.
+- Error entries include the PostgreSQL message, detail, hint, context, SQLSTATE and the exact source line of the failing statement.
 - Never write passwords or other secrets in the log.
 - Maximum size per file: 5 MB. When the limit is reached, the file is rotated. Keep the 3 most recent old files and delete the others.
 - If the log file cannot be written, the program keeps working.

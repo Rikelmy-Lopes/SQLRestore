@@ -5,6 +5,7 @@ Cross-platform desktop application to restore `.sql` backup files on PostgreSQL.
 ## Features
 
 - Restore `.sql` files on PostgreSQL using the database connection.
+- Optional delete and recreate of the target database before a restore, with a confirmation dialog.
 - Cancel a restore in progress.
 - Light and dark themes.
 - Multiple languages (English is the primary language).
