@@ -25,11 +25,14 @@
   "result.title": "Result",
   "status.idle": "Ready",
   "status.running": "Restoring...",
-  "status.success": "Restore completed: {statements} statements, {bytes} bytes.",
+  "status.success": "Restore completed in {duration}: {statements} statements, {bytes} bytes.",
   "status.cancelled": "Restore cancelled.",
   "status.failed": "Restore failed: {error}",
   "status.invalid_port": "Port must be a number between 1 and 65535.",
   "status.config_save_failed": "Could not save the configuration: {error}",
   "status.password_save_failed": "Could not save the password in the system keychain.",
-  "status.connection_lost": "The restore stopped unexpectedly."
+  "status.connection_lost": "The restore stopped unexpectedly.",
+  "duration.seconds": "{seconds} s",
+  "duration.minutes": "{minutes} min {seconds} s",
+  "duration.hours": "{hours} h {minutes} min {seconds} s"
 }

@@ -1,5 +1,7 @@
 //! Application configuration model.
 
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 
 /// Languages shipped with the application.
@@ -87,6 +89,9 @@ pub struct AppConfig {
     /// Deletes and recreates the target database before a restore.
     #[serde(default)]
     pub recreate_database: bool,
+    /// Backup file used by the last restore.
+    #[serde(default)]
+    pub last_backup_file: Option<PathBuf>,
 }
 
 impl Default for AppConfig {
@@ -96,6 +101,7 @@ impl Default for AppConfig {
             language: FALLBACK_LANGUAGE.to_string(),
             connection: ConnectionSettings::default(),
             recreate_database: false,
+            last_backup_file: None,
         }
     }
 }
@@ -114,6 +120,7 @@ mod tests {
         assert_eq!(config.connection.user, "postgres");
         assert!(config.connection.database.is_empty());
         assert!(!config.recreate_database);
+        assert!(config.last_backup_file.is_none());
     }
 
     #[test]

@@ -14,6 +14,10 @@ Features already done.
 - [x] Database connection form
 - [x] Select backup file
 - [x] Restore progress and result
+- [x] Separate loading spinner and progress bar
+- [x] Remember the last `.sql` file in the configuration
+- [x] Show the restore duration in the result
+- [x] Lock connection fields and database recreation checkbox while restoring
 - [x] Light and dark themes
 - [x] i18n with `.json` files (English)
 - [x] Config file (`config.json` in AppData): theme, language and connection

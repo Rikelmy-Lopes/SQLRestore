@@ -1,5 +1,6 @@
 //! Main window of the application.
 
+mod duration;
 mod main_screen;
 mod status;
 
@@ -45,6 +46,10 @@ impl SqlRestoreApp {
             .egui_ctx
             .set_visuals(visuals_for(config.theme));
         let port_input = config.connection.port.to_string();
+        let backup_path = config
+            .last_backup_file
+            .clone()
+            .filter(|path| path.is_file());
 
         Self {
             commands,
@@ -52,7 +57,7 @@ impl SqlRestoreApp {
             config,
             port_input,
             password,
-            backup_path: None,
+            backup_path,
             status: Status::Idle,
             progress: 0.0,
             task: None,

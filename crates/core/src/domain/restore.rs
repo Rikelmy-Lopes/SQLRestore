@@ -2,6 +2,7 @@
 
 use std::fmt;
 use std::path::PathBuf;
+use std::time::Duration;
 
 use super::config::ConnectionSettings;
 use super::error::RestoreError;
@@ -87,6 +88,8 @@ impl RestoreProgress {
 pub struct RestoreReport {
     pub statements: usize,
     pub bytes: u64,
+    /// Time spent by the restore command.
+    pub elapsed: Duration,
 }
 
 #[cfg(test)]

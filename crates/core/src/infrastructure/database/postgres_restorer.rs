@@ -186,6 +186,7 @@ fn run_chunks(
     Ok(RestoreReport {
         statements,
         bytes: total_bytes,
+        elapsed: Duration::ZERO,
     })
 }
 

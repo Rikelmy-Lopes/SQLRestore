@@ -61,9 +61,13 @@ mod tests {
     fn replaces_placeholders() {
         let text = i18n().t_args(
             "status.success",
-            &[("statements", "2".to_string()), ("bytes", "10".to_string())],
+            &[
+                ("statements", "2".to_string()),
+                ("bytes", "10".to_string()),
+                ("duration", "1.2 s".to_string()),
+            ],
         );
-        assert_eq!(text, "Restore completed: 2 statements, 10 bytes.");
+        assert_eq!(text, "Restore completed in 1.2 s: 2 statements, 10 bytes.");
     }
 
     #[test]
@@ -102,6 +106,9 @@ mod tests {
             "status.config_save_failed",
             "status.password_save_failed",
             "status.connection_lost",
+            "duration.seconds",
+            "duration.minutes",
+            "duration.hours",
         ];
         let i18n = i18n();
         for key in required {

@@ -93,11 +93,20 @@ fn config_from_value(value: &Value) -> AppConfig {
         .and_then(Value::as_bool)
         .unwrap_or(defaults.recreate_database);
 
+    let last_backup_file = value
+        .get("last_backup_file")
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|path| !path.is_empty())
+        .map(PathBuf::from)
+        .or(defaults.last_backup_file);
+
     AppConfig {
         theme,
         language,
         connection,
         recreate_database,
+        last_backup_file,
     }
 }
 
@@ -170,9 +179,21 @@ mod tests {
                 database: "shop".to_string(),
             },
             recreate_database: true,
+            last_backup_file: Some(PathBuf::from("C:/backups/shop.sql")),
         };
         repository.save(&config).expect("save");
         assert_eq!(repository.load().expect("load"), config);
+    }
+
+    #[test]
+    fn empty_last_backup_file_falls_back_to_none() {
+        let (directory, repository) = repository();
+        fs::write(
+            directory.path().join("config.json"),
+            r#"{"last_backup_file": "   "}"#,
+        )
+        .expect("write");
+        assert!(repository.load().expect("load").last_backup_file.is_none());
     }
 
     #[test]
@@ -202,6 +223,7 @@ mod tests {
         assert_eq!(config.connection.user, "postgres");
         assert_eq!(config.connection.database, "shop");
         assert!(!config.recreate_database);
+        assert!(config.last_backup_file.is_none());
     }
 
     #[test]

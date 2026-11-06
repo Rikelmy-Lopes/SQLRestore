@@ -5,10 +5,12 @@ use sqlrestore_core::domain::config::Theme;
 use sqlrestore_core::domain::restore::RestoreRequest;
 
 use super::SqlRestoreApp;
+use super::duration::format_duration;
 use super::status::Status;
 
 impl SqlRestoreApp {
     pub(super) fn draw_main_screen(&mut self, ui: &mut egui::Ui) {
+        let can_edit = self.task.is_none();
         ui.add_space(8.0);
         ui.heading(self.i18n.t("connection.title"));
 
@@ -17,23 +19,35 @@ impl SqlRestoreApp {
             .spacing([12.0, 8.0])
             .show(ui, |ui| {
                 ui.label(self.i18n.t("connection.host"));
-                ui.text_edit_singleline(&mut self.config.connection.host);
+                ui.add_enabled(
+                    can_edit,
+                    egui::TextEdit::singleline(&mut self.config.connection.host),
+                );
                 ui.end_row();
 
                 ui.label(self.i18n.t("connection.port"));
-                ui.text_edit_singleline(&mut self.port_input);
+                ui.add_enabled(can_edit, egui::TextEdit::singleline(&mut self.port_input));
                 ui.end_row();
 
                 ui.label(self.i18n.t("connection.user"));
-                ui.text_edit_singleline(&mut self.config.connection.user);
+                ui.add_enabled(
+                    can_edit,
+                    egui::TextEdit::singleline(&mut self.config.connection.user),
+                );
                 ui.end_row();
 
                 ui.label(self.i18n.t("connection.password"));
-                ui.add(egui::TextEdit::singleline(&mut self.password).password(true));
+                ui.add_enabled(
+                    can_edit,
+                    egui::TextEdit::singleline(&mut self.password).password(true),
+                );
                 ui.end_row();
 
                 ui.label(self.i18n.t("connection.database"));
-                ui.text_edit_singleline(&mut self.config.connection.database);
+                ui.add_enabled(
+                    can_edit,
+                    egui::TextEdit::singleline(&mut self.config.connection.database),
+                );
                 ui.end_row();
             });
 
@@ -49,7 +63,10 @@ impl SqlRestoreApp {
 
         let recreate_label = self.i18n.t("connection.recreate_database");
         let recreate_changed = ui
-            .checkbox(&mut self.config.recreate_database, recreate_label)
+            .add_enabled(
+                can_edit,
+                egui::Checkbox::new(&mut self.config.recreate_database, recreate_label),
+            )
             .changed();
         ui.label(egui::RichText::new(self.i18n.t("connection.recreate_database.hint")).weak());
         if recreate_changed {
@@ -63,7 +80,7 @@ impl SqlRestoreApp {
             || self.i18n.t("backup.no_file"),
             |path| path.display().to_string(),
         );
-        let can_select = self.task.is_none();
+        let can_select = can_edit;
         let mut select_clicked = false;
         ui.horizontal(|ui| {
             ui.label(path_text);
@@ -75,7 +92,9 @@ impl SqlRestoreApp {
             }
         });
         if select_clicked && let Some(path) = self.select_backup.execute() {
-            self.backup_path = Some(path);
+            self.backup_path = Some(path.clone());
+            self.config.last_backup_file = Some(path);
+            self.persist_config();
             if matches!(self.status, Status::Failed(_) | Status::Cancelled) {
                 self.status = Status::Idle;
             }
@@ -120,11 +139,10 @@ impl SqlRestoreApp {
         ui.heading(self.i18n.t("result.title"));
 
         if self.task.is_some() {
-            ui.add(
-                egui::ProgressBar::new(self.progress)
-                    .show_percentage()
-                    .animate(true),
-            );
+            ui.horizontal(|ui| {
+                ui.add(egui::Spinner::new());
+                ui.add(egui::ProgressBar::new(self.progress).show_percentage());
+            });
         }
 
         let (message, color) = self.status_message(ui);
@@ -237,6 +255,7 @@ impl SqlRestoreApp {
                     &[
                         ("statements", report.statements.to_string()),
                         ("bytes", report.bytes.to_string()),
+                        ("duration", format_duration(&self.i18n, report.elapsed)),
                     ],
                 ),
                 self.success_color(),

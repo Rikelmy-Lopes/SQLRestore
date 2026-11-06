@@ -1,6 +1,7 @@
 //! Restore command.
 
 use std::sync::Arc;
+use std::time::Instant;
 
 use crate::domain::cancellation::Cancellation;
 use crate::domain::error::RestoreError;
@@ -57,18 +58,24 @@ impl RestoreCommandHandler {
             );
         }
 
+        let started = Instant::now();
         let result = self
             .restorer
-            .restore(&request, &self.cancellation, progress);
+            .restore(&request, &self.cancellation, progress)
+            .map(|mut report| {
+                report.elapsed = started.elapsed();
+                report
+            });
 
         match &result {
             Ok(report) => self.logger.log(
                 LogLevel::Info,
                 &format!(
-                    "Restore finished: file={} statements={} bytes={}",
+                    "Restore finished: file={} statements={} bytes={} elapsed={:?}",
                     request.file_path.display(),
                     report.statements,
-                    report.bytes
+                    report.bytes,
+                    report.elapsed
                 ),
             ),
             Err(RestoreError::Cancelled) => self.logger.log(
@@ -136,6 +143,7 @@ mod tests {
                 result: Mutex::new(Some(Ok(RestoreReport {
                     statements: 2,
                     bytes: 10,
+                    elapsed: std::time::Duration::ZERO,
                 }))),
                 progress: AtomicBool::new(false),
             }
@@ -247,6 +255,15 @@ mod tests {
                 .iter()
                 .any(|message| message.contains("Restore cancelled"))
         );
+    }
+
+    #[test]
+    fn success_reports_elapsed_time() {
+        let (handler, _logger) = handler(FakeRestorer::success());
+        let report = handler
+            .execute(RestoreCommand { request: request() }, &|_| {})
+            .expect("restore succeeds");
+        assert!(report.elapsed > std::time::Duration::ZERO);
     }
 
     #[test]

@@ -77,9 +77,12 @@ File `config.json`, saved in the AppData folder of each system:
     "user": "postgres",
     "database": ""
   },
-  "recreate_database": false
+  "recreate_database": false,
+  "last_backup_file": null
 }
 ```
+
+`last_backup_file` is the `.sql` file selected by the user in the previous session.
 
 ## Password
 
@@ -111,7 +114,8 @@ Default values:
     "user": "postgres",
     "database": ""
   },
-  "recreate_database": false
+  "recreate_database": false,
+  "last_backup_file": null
 }
 ```
 
