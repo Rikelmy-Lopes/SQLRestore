@@ -25,7 +25,7 @@
   "backup.no_file": "No file selected",
   "action.restore": "Restore",
   "action.cancel": "Cancel",
-  "recreate.title": "Recreate database",
+  "recreate.title": "Warning: recreate database",
   "recreate.warning": "This deletes all data in database \"{database}\" before restoring. This cannot be undone.",
   "recreate.cancel": "Cancel",
   "recreate.confirm": "Delete and restore",

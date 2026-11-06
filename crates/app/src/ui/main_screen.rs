@@ -9,8 +9,8 @@ use super::status::Status;
 use super::style::Palette;
 use super::widgets::{self, ButtonKind, MessageTone, TextField};
 
-const CONTENT_MAX_WIDTH: f32 = 660.0;
-const COLUMN_GAP: f32 = 14.0;
+const CONTENT_MAX_WIDTH: f32 = 620.0;
+const COLUMN_GAP: f32 = 12.0;
 
 impl SqlRestoreApp {
     pub(super) fn draw_main_screen(&mut self, ui: &mut egui::Ui) {
@@ -63,7 +63,7 @@ impl SqlRestoreApp {
         let recreate_label = self.i18n.t("connection.recreate_database");
         let recreate_hint = self.i18n.t("connection.recreate_database.hint");
 
-        ui.add_space(16.0);
+        ui.add_space(12.0);
 
         widgets::section_card(ui, palette, |ui| {
             widgets::section_title(ui, palette, &connection_title);
@@ -86,7 +86,7 @@ impl SqlRestoreApp {
                     .enabled(can_edit)
                     .show(ui, palette);
             });
-            ui.add_space(2.0);
+            ui.add_space(1.0);
 
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = COLUMN_GAP;
@@ -108,7 +108,7 @@ impl SqlRestoreApp {
                 .password(true)
                 .show(ui, palette);
             });
-            ui.add_space(2.0);
+            ui.add_space(1.0);
 
             TextField::new(
                 &database_label,
@@ -124,7 +124,7 @@ impl SqlRestoreApp {
                 widgets::error_text(ui, palette, &invalid_port);
             }
 
-            ui.add_space(10.0);
+            ui.add_space(8.0);
             use_file_name_changed = ui
                 .add_enabled(
                     can_edit,
@@ -136,7 +136,7 @@ impl SqlRestoreApp {
                 .changed();
             widgets::hint_text(ui, palette, &use_file_name_hint);
 
-            ui.add_space(8.0);
+            ui.add_space(6.0);
             recreate_changed = ui
                 .add_enabled(
                     can_edit,
@@ -149,7 +149,7 @@ impl SqlRestoreApp {
             widgets::hint_text(ui, palette, &recreate_hint);
         });
 
-        ui.add_space(16.0);
+        ui.add_space(12.0);
 
         let backup_title = self.i18n.t("backup.title");
         let select_label = self.i18n.t("backup.select");
@@ -161,7 +161,7 @@ impl SqlRestoreApp {
         widgets::section_card(ui, palette, |ui| {
             widgets::section_title(ui, palette, &backup_title);
             let width = ui.available_width();
-            let select_width = 130.0;
+            let select_width = 112.0;
             let path_width = (width - select_width - 12.0).max(120.0);
 
             ui.horizontal(|ui| {
@@ -188,7 +188,7 @@ impl SqlRestoreApp {
             });
         });
 
-        ui.add_space(16.0);
+        ui.add_space(12.0);
 
         let can_restore = self.task.is_none()
             && self.config.connection.is_complete()
@@ -198,8 +198,8 @@ impl SqlRestoreApp {
         let restore_label = self.i18n.t("action.restore");
         let cancel_label = self.i18n.t("action.cancel");
 
-        let restore_width = 170.0;
-        let cancel_width = 140.0;
+        let restore_width = 150.0;
+        let cancel_width = 118.0;
         ui.vertical_centered(|ui| {
             ui.horizontal(|ui| {
                 let actions_width = restore_width + 12.0 + cancel_width;
@@ -235,7 +235,7 @@ impl SqlRestoreApp {
             });
         });
 
-        ui.add_space(16.0);
+        ui.add_space(12.0);
 
         let result_title = self.i18n.t("result.title");
         widgets::section_card(ui, palette, |ui| {
@@ -243,12 +243,12 @@ impl SqlRestoreApp {
 
             if self.task.is_some() {
                 ui.horizontal(|ui| {
-                    ui.add(egui::Spinner::new().size(18.0).color(palette.primary));
+                    ui.add(egui::Spinner::new().size(16.0).color(palette.primary));
                     ui.add(
                         egui::ProgressBar::new(self.progress)
                             .desired_width(ui.available_width())
-                            .desired_height(18.0)
-                            .corner_radius(egui::CornerRadius::same(9))
+                            .desired_height(16.0)
+                            .corner_radius(egui::CornerRadius::same(8))
                             .fill(palette.primary)
                             .show_percentage(),
                     );
@@ -260,7 +260,7 @@ impl SqlRestoreApp {
             widgets::message_banner(ui, palette, &message, tone);
         });
 
-        ui.add_space(24.0);
+        ui.add_space(16.0);
 
         if use_file_name_changed {
             self.sync_database_from_backup();
@@ -349,24 +349,24 @@ impl SqlRestoreApp {
         let mut confirm = false;
         let mut cancel = false;
         egui::Modal::new(egui::Id::unique("recreate_database_confirmation")).show(context, |ui| {
-            ui.set_max_width(440.0);
+            ui.set_max_width(400.0);
             ui.label(
                 egui::RichText::new(title)
-                    .size(18.0)
+                    .size(17.0)
                     .strong()
-                    .color(palette.text),
+                    .color(palette.error),
             );
-            ui.add_space(8.0);
+            ui.add_space(6.0);
             ui.label(
                 egui::RichText::new(warning)
-                    .size(14.0)
+                    .size(13.5)
                     .color(palette.weak_text),
             );
-            ui.add_space(16.0);
+            ui.add_space(12.0);
             ui.vertical_centered(|ui| {
                 ui.horizontal(|ui| {
-                    let cancel_width = 130.0;
-                    let confirm_width = 170.0;
+                    let cancel_width = 118.0;
+                    let confirm_width = 150.0;
                     let actions_width = cancel_width + 12.0 + confirm_width;
                     ui.spacing_mut().item_spacing.x = 12.0;
                     let side = ((ui.available_width() - actions_width) / 2.0
@@ -389,7 +389,7 @@ impl SqlRestoreApp {
                         ui,
                         &palette,
                         &confirm_label,
-                        ButtonKind::Primary,
+                        ButtonKind::Danger,
                         true,
                         confirm_width,
                     )

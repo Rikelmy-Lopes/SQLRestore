@@ -67,21 +67,21 @@ pub fn apply_style(context: &egui::Context, theme: Theme) {
     let mut style = (*context.style_of(egui_theme)).clone();
 
     style.visuals = visuals_for(theme, &palette);
-    style.spacing.item_spacing = egui::vec2(10.0, 10.0);
-    style.spacing.button_padding = egui::vec2(18.0, 9.0);
-    style.spacing.interact_size.y = 38.0;
-    style.spacing.text_edit_width = 260.0;
-    style.spacing.icon_width = 18.0;
-    style.spacing.icon_width_inner = 10.0;
-    style.spacing.icon_spacing = 8.0;
-    style.spacing.menu_margin = egui::Margin::same(8);
+    style.spacing.item_spacing = egui::vec2(8.0, 8.0);
+    style.spacing.button_padding = egui::vec2(16.0, 7.0);
+    style.spacing.interact_size.y = 34.0;
+    style.spacing.text_edit_width = 240.0;
+    style.spacing.icon_width = 17.0;
+    style.spacing.icon_width_inner = 9.0;
+    style.spacing.icon_spacing = 7.0;
+    style.spacing.menu_margin = egui::Margin::same(7);
 
     style.text_styles = [
-        (egui::TextStyle::Heading, egui::FontId::proportional(22.0)),
-        (egui::TextStyle::Body, egui::FontId::proportional(15.0)),
-        (egui::TextStyle::Button, egui::FontId::proportional(15.0)),
-        (egui::TextStyle::Small, egui::FontId::proportional(12.0)),
-        (egui::TextStyle::Monospace, egui::FontId::monospace(13.0)),
+        (egui::TextStyle::Heading, egui::FontId::proportional(20.0)),
+        (egui::TextStyle::Body, egui::FontId::proportional(14.5)),
+        (egui::TextStyle::Button, egui::FontId::proportional(14.5)),
+        (egui::TextStyle::Small, egui::FontId::proportional(11.5)),
+        (egui::TextStyle::Monospace, egui::FontId::monospace(12.5)),
     ]
     .into();
 

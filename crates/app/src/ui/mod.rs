@@ -129,13 +129,13 @@ impl SqlRestoreApp {
             .frame(
                 egui::Frame::new()
                     .fill(palette.panel)
-                    .inner_margin(egui::Margin::symmetric(20, 8)),
+                    .inner_margin(egui::Margin::symmetric(16, 6)),
             )
             .show(ui, |ui| {
                 ui.horizontal(|ui| {
                     ui.label(
                         egui::RichText::new(self.i18n.t("app.title"))
-                            .size(20.0)
+                            .size(18.0)
                             .strong()
                             .color(palette.primary),
                     );
