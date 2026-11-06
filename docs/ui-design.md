@@ -13,9 +13,13 @@ SQLRestore uses a simple interface built with egui (eframe).
 
 | Element | Light | Dark |
 |---------|-------|------|
-| Background | `#FFFFFF` | `#121212` |
-| Panel | `#F5F5F5` | `#1E1E1E` |
+| Background | `#F4F6FA` | `#121212` |
+| Panel | `#FFFFFF` | `#1E1E1E` |
+| Card | `#FFFFFF` | `#1E1E1E` |
+| Input | `#FAFBFD` | `#262626` |
+| Border | `#D6DCE7` | `#333A45` |
 | Text | `#1A1A1A` | `#EDEDED` |
+| Weak text | `#6B7280` | `#9CA3AF` |
 | Primary | `#2563EB` | `#3B82F6` |
 | Success | `#16A34A` | `#22C55E` |
 | Error | `#DC2626` | `#EF4444` |

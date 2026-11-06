@@ -3,6 +3,8 @@
 mod duration;
 mod main_screen;
 mod status;
+mod style;
+mod widgets;
 
 use std::path::PathBuf;
 use std::sync::mpsc::TryRecvError;
@@ -20,6 +22,7 @@ use crate::commands::{
 use crate::i18n::I18n;
 
 use status::Status;
+use style::Palette;
 
 /// eframe application.
 pub struct SqlRestoreApp {
@@ -44,9 +47,7 @@ impl SqlRestoreApp {
         config: AppConfig,
         password: String,
     ) -> Self {
-        creation_context
-            .egui_ctx
-            .set_visuals(visuals_for(config.theme));
+        style::apply_style(&creation_context.egui_ctx, config.theme);
         let port_input = config.connection.port.to_string();
         let backup_path = config
             .last_backup_file
@@ -122,45 +123,56 @@ impl SqlRestoreApp {
         let mut selected_language = None;
         let mut toggle_theme = false;
         let context = ui.ctx().clone();
+        let palette = Palette::for_theme(self.config.theme);
 
-        egui::Panel::top("top_bar").show(ui, |ui| {
-            ui.add_space(4.0);
-            ui.horizontal(|ui| {
-                ui.heading(self.i18n.t("app.title"));
-                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                    let theme_key = match self.config.theme {
-                        Theme::Light => "theme.light",
-                        Theme::Dark => "theme.dark",
-                    };
-                    let theme_text = format!(
-                        "{}: {}",
-                        self.i18n.t("topbar.theme"),
-                        self.i18n.t(theme_key)
+        egui::Panel::top("top_bar")
+            .frame(
+                egui::Frame::new()
+                    .fill(palette.panel)
+                    .inner_margin(egui::Margin::symmetric(20, 8)),
+            )
+            .show(ui, |ui| {
+                ui.horizontal(|ui| {
+                    ui.label(
+                        egui::RichText::new(self.i18n.t("app.title"))
+                            .size(20.0)
+                            .strong()
+                            .color(palette.primary),
                     );
-                    if ui.button(theme_text).clicked() {
-                        toggle_theme = true;
-                    }
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        let theme_key = match self.config.theme {
+                            Theme::Light => "theme.light",
+                            Theme::Dark => "theme.dark",
+                        };
+                        let theme_text = format!(
+                            "{}: {}",
+                            self.i18n.t("topbar.theme"),
+                            self.i18n.t(theme_key)
+                        );
+                        if ui.button(theme_text).clicked() {
+                            toggle_theme = true;
+                        }
 
-                    let selected_text = self.i18n.t(&format!("language.{}", self.config.language));
-                    egui::ComboBox::from_id_salt("language_selector")
-                        .selected_text(selected_text)
-                        .show_ui(ui, |ui| {
-                            for language in SUPPORTED_LANGUAGES {
-                                let label = self.i18n.t(&format!("language.{language}"));
-                                if ui
-                                    .selectable_label(*language == self.config.language, label)
-                                    .clicked()
-                                {
-                                    selected_language = Some((*language).to_string());
+                        let selected_text =
+                            self.i18n.t(&format!("language.{}", self.config.language));
+                        egui::ComboBox::from_id_salt("language_selector")
+                            .selected_text(selected_text)
+                            .show_ui(ui, |ui| {
+                                for language in SUPPORTED_LANGUAGES {
+                                    let label = self.i18n.t(&format!("language.{language}"));
+                                    if ui
+                                        .selectable_label(*language == self.config.language, label)
+                                        .clicked()
+                                    {
+                                        selected_language = Some((*language).to_string());
+                                    }
                                 }
-                            }
-                        });
+                            });
 
-                    ui.label(self.i18n.t("language.label"));
+                        ui.label(self.i18n.t("language.label"));
+                    });
                 });
             });
-            ui.add_space(4.0);
-        });
 
         if let Some(language) = selected_language {
             self.config.language = language.clone();
@@ -170,7 +182,7 @@ impl SqlRestoreApp {
 
         if toggle_theme {
             self.config.theme = self.config.theme.toggled();
-            context.set_visuals(visuals_for(self.config.theme));
+            style::apply_style(&context, self.config.theme);
             self.persist_config();
         }
     }
@@ -215,20 +227,4 @@ impl eframe::App for SqlRestoreApp {
         let confirmation_context = ui.ctx().clone();
         self.draw_recreate_confirmation(&confirmation_context);
     }
-}
-
-fn visuals_for(theme: Theme) -> egui::Visuals {
-    let (mut visuals, primary) = match theme {
-        Theme::Light => (
-            egui::Visuals::light(),
-            egui::Color32::from_rgb(0x25, 0x63, 0xEB),
-        ),
-        Theme::Dark => (
-            egui::Visuals::dark(),
-            egui::Color32::from_rgb(0x3B, 0x82, 0xF6),
-        ),
-    };
-    visuals.selection.bg_fill = primary;
-    visuals.hyperlink_color = primary;
-    visuals
 }

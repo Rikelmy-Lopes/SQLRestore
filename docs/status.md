@@ -27,6 +27,7 @@ Features already done.
 - [x] Detailed PostgreSQL errors in the log and the exact failing source line
 - [x] Log entries on the terminal in debug builds
 - [x] Cross-platform support
+- [x] Styled interface: rounded inputs and buttons, centered card layout, colored success and error banners
 - [x] Automated tests for the core and the application
 
 ## Pending
