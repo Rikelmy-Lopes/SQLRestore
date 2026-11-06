@@ -12,8 +12,28 @@ Mandatory rules are in [AGENTS.md](../AGENTS.md).
 
 | Crate | Purpose |
 |-------|---------|
-| `crates/core` | Business logic, commands, ports, adapters, config, i18n. No UI. |
-| `crates/app` | egui (eframe) interface. Calls the core only through commands. |
+| `crates/core` | Business logic, commands, ports, infrastructure adapters, configuration, and i18n. No UI or egui dependency. |
+| `crates/app` | egui (eframe) interface and application entry point. Calls the core through its public command interfaces. |
+
+Infrastructure is implemented inside `crates/core`, under its `infrastructure` module. It is not a separate workspace crate.
+
+## Project Structure
+
+```text
+SQLRestore/
+├── crates/
+│   ├── core/
+│   └── app/
+├── locales/
+├── docs/
+├── Cargo.toml
+├── Cargo.lock
+├── rust-toolchain.toml
+├── README.md
+└── AGENTS.md
+```
+
+This is the intended organization. Add modules under the relevant directory as the implementation grows. Use `mod.rs` for module folders, as required by `AGENTS.md`.
 
 ## Restore
 
@@ -35,7 +55,7 @@ File `config.json`, saved in the AppData folder of each system:
 
 | System | Path |
 |--------|------|
-| Windows | `%APPDATA%\SQLRestore\config.json` |
+| Windows | `%APPDATA%\\SQLRestore\\config.json` |
 | macOS | `~/Library/Application Support/SQLRestore/config.json` |
 | Linux | `~/.config/SQLRestore/config.json` |
 
@@ -91,7 +111,7 @@ The program writes a log file to find problems after a restore fails.
 
 | System | Path |
 |--------|------|
-| Windows | `%APPDATA%\SQLRestore\logs\sqlrestore.log` |
+| Windows | `%APPDATA%\\SQLRestore\\logs\\sqlrestore.log` |
 | macOS | `~/Library/Application Support/SQLRestore/logs/sqlrestore.log` |
 | Linux | `~/.config/SQLRestore/logs/sqlrestore.log` |
 

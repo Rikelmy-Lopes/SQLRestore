@@ -20,6 +20,10 @@ SQLRestore is a desktop app (Rust 1.99.x + egui/eframe) that restores `.sql` bac
 10. **UI:** Simple interface with light and dark themes. A cancel restore button must be present.
 11. **Log:** The program writes a log file in the AppData folder of each system. Record the start, end, cancel and errors of each restore. Never write passwords or other secrets in the log. Limit the file size and rotate old files. The core uses the `Logger` port.
 12. **Status:** After finishing a feature, update `docs/status.md`.
+13. **Dependencies:** Prefer existing dependencies and Rust standard library functionality. Avoid unnecessary dependencies.
+14. **Thread Safety:** Shared state must use appropriate synchronization. Never block the UI thread with database operations or file I/O.
+15. **Code Quality:** Avoid duplicated logic, unnecessary abstractions, and overly complex functions.
+16. **Naming:** Follow the default Rust naming conventions. Use `PascalCase` for types and traits, `snake_case` for functions, methods, variables, and modules, and `SCREAMING_SNAKE_CASE` for constants and statics.
 
 ## Before Finishing Any Task
 
