@@ -13,7 +13,15 @@ The workspace contains two crates. Infrastructure belongs inside `crates/core`; 
 SQLRestore/
 ├── crates/
 │   ├── core/
+│   │   └── src
 │   └── app/
+│       └── src
+│           ├── i18n
+│           ├── startup
+│           ├── ui
+│           ├── commands
+│           └── main.rs
+│
 ├── locales/
 ├── docs/
 ├── Cargo.toml

@@ -12,8 +12,8 @@ Mandatory rules are in [AGENTS.md](../AGENTS.md).
 
 | Crate | Purpose |
 |-------|---------|
-| `crates/core` | Business logic, commands, ports, infrastructure adapters, configuration, and i18n. No UI or egui dependency. |
-| `crates/app` | egui (eframe) interface and application entry point. Calls the core through its public command interfaces. |
+| `crates/core` | Business logic, ports, infrastructure adapters, configuration. No UI or egui dependency. |
+| `crates/app` | egui (eframe) interface, application entry point, commands and i18n. Calls the core through its public command interfaces. |
 
 Infrastructure is implemented inside `crates/core`, under its `infrastructure` module. It is not a separate workspace crate.
 
@@ -23,7 +23,15 @@ Infrastructure is implemented inside `crates/core`, under its `infrastructure` m
 SQLRestore/
 ├── crates/
 │   ├── core/
+│   │   └── src
 │   └── app/
+│       └── src
+│           ├── i18n
+│           ├── startup
+│           ├── ui
+│           ├── commands
+│           └── main.rs
+│
 ├── locales/
 ├── docs/
 ├── Cargo.toml
