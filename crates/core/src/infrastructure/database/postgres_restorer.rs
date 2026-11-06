@@ -1,7 +1,6 @@
 //! PostgreSQL restore adapter.
 
-use std::fs;
-use std::io::Write;
+use std::fs::{self, File};
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -12,11 +11,12 @@ use crate::domain::error::RestoreError;
 use crate::domain::restore::{
     RestoreProgress, RestoreReport, RestoreRequest, is_protected_database,
 };
-use crate::domain::sql_script::{ScriptChunk, parse_sql_script};
+use crate::domain::sql_script::{CopyDataOutcome, ScriptStatement, SqlScriptReader};
 use crate::ports::database_restorer::DatabaseRestorer;
 
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 const MAINTENANCE_DATABASE: &str = "postgres";
+const PROGRESS_INTERVAL: u64 = 1024 * 1024;
 
 /// Restores plain SQL backups through a PostgreSQL connection.
 #[derive(Default)]
@@ -82,27 +82,6 @@ impl PostgresRestorer {
 
         Ok(())
     }
-
-    fn execute_chunk(client: &mut Client, chunk: &ScriptChunk) -> Result<(), RestoreError> {
-        match &chunk.copy_data {
-            Some(data) => {
-                let query = chunk.sql.trim_end().trim_end_matches(';').trim_end();
-                let mut writer = client
-                    .copy_in(query)
-                    .map_err(|error| database_error(chunk, error))?;
-                writer
-                    .write_all(data.as_bytes())
-                    .map_err(|error| database_io_error(chunk, error))?;
-                writer
-                    .finish()
-                    .map(|_| ())
-                    .map_err(|error| database_error(chunk, error))
-            }
-            None => client
-                .batch_execute(&chunk.sql)
-                .map_err(|error| database_error(chunk, error)),
-        }
-    }
 }
 
 impl DatabaseRestorer for PostgresRestorer {
@@ -113,9 +92,9 @@ impl DatabaseRestorer for PostgresRestorer {
         progress: &dyn Fn(RestoreProgress),
     ) -> Result<RestoreReport, RestoreError> {
         request.validate()?;
-        let contents = fs::read_to_string(&request.file_path)?;
-        let total_bytes = contents.len() as u64;
-        let chunks = parse_sql_script(&contents);
+        let total_bytes = fs::metadata(&request.file_path)?.len();
+        let file = File::open(&request.file_path)?;
+        let mut script = SqlScriptReader::new(file);
 
         if cancellation.is_cancelled() {
             return Err(RestoreError::Cancelled);
@@ -134,7 +113,13 @@ impl DatabaseRestorer for PostgresRestorer {
             *token = Some(client.cancel_token());
         }
 
-        let outcome = run_chunks(&mut client, &chunks, total_bytes, cancellation, progress);
+        let outcome = run_chunks(
+            &mut client,
+            &mut script,
+            total_bytes,
+            cancellation,
+            progress,
+        );
 
         if let Ok(mut token) = self.cancel_token.lock() {
             *token = None;
@@ -159,29 +144,57 @@ impl DatabaseRestorer for PostgresRestorer {
 
 fn run_chunks(
     client: &mut Client,
-    chunks: &[ScriptChunk],
+    script: &mut SqlScriptReader<File>,
     total_bytes: u64,
     cancellation: &Cancellation,
     progress: &dyn Fn(RestoreProgress),
 ) -> Result<RestoreReport, RestoreError> {
     let mut statements = 0usize;
+    let mut last_progress = 0u64;
 
-    for chunk in chunks {
+    let mut report_progress = |offset: u64| {
+        if offset.saturating_sub(last_progress) >= PROGRESS_INTERVAL || offset >= total_bytes {
+            last_progress = offset;
+            progress(RestoreProgress {
+                processed_bytes: offset.min(total_bytes),
+                total_bytes,
+            });
+        }
+    };
+
+    while let Some(statement) = script.next_statement()? {
         if cancellation.is_cancelled() {
             return Err(RestoreError::Cancelled);
         }
-        PostgresRestorer::execute_chunk(client, chunk)?;
+
+        if statement.copy {
+            let query = statement.sql.trim_end().trim_end_matches(';').trim_end();
+            let mut writer = client
+                .copy_in(query)
+                .map_err(|error| database_error(&statement, error))?;
+            let outcome = script
+                .read_copy_data(&mut writer, &mut |offset| {
+                    report_progress(offset);
+                    !cancellation.is_cancelled()
+                })
+                .map_err(|error| database_io_error(&statement, error))?;
+            if outcome == CopyDataOutcome::Cancelled {
+                return Err(RestoreError::Cancelled);
+            }
+            writer
+                .finish()
+                .map_err(|error| database_error(&statement, error))?;
+        } else {
+            client
+                .batch_execute(&statement.sql)
+                .map_err(|error| database_error(&statement, error))?;
+        }
+
         statements += 1;
-        progress(RestoreProgress {
-            processed_bytes: chunk.end_offset as u64,
-            total_bytes,
-        });
+        report_progress(script.position());
     }
 
-    progress(RestoreProgress {
-        processed_bytes: total_bytes,
-        total_bytes,
-    });
+    report_progress(total_bytes);
 
     Ok(RestoreReport {
         statements,
@@ -190,16 +203,16 @@ fn run_chunks(
     })
 }
 
-fn database_error(chunk: &ScriptChunk, error: postgres::Error) -> RestoreError {
+fn database_error(statement: &ScriptStatement, error: postgres::Error) -> RestoreError {
     RestoreError::Database {
-        line: statement_line(chunk, &error),
+        line: statement_line(statement, &error),
         message: describe_database_error(&error),
     }
 }
 
-fn database_io_error(chunk: &ScriptChunk, error: std::io::Error) -> RestoreError {
+fn database_io_error(statement: &ScriptStatement, error: std::io::Error) -> RestoreError {
     RestoreError::Database {
-        line: chunk.start_line,
+        line: statement.start_line,
         message: format!("could not send COPY data: {error}"),
     }
 }
@@ -254,7 +267,7 @@ fn describe_database_error(error: &postgres::Error) -> String {
 }
 
 /// Line in the source file where the failing statement position is.
-fn statement_line(chunk: &ScriptChunk, error: &postgres::Error) -> usize {
+fn statement_line(statement: &ScriptStatement, error: &postgres::Error) -> usize {
     let position = error
         .as_db_error()
         .and_then(|database_error| database_error.position())
@@ -263,7 +276,7 @@ fn statement_line(chunk: &ScriptChunk, error: &postgres::Error) -> usize {
             postgres::error::ErrorPosition::Internal { .. } => None,
         });
 
-    chunk.start_line + position.map_or(0, |position| newlines_before(&chunk.sql, position))
+    statement.start_line + position.map_or(0, |position| newlines_before(&statement.sql, position))
 }
 
 /// Counts line breaks before a 1-based character position.

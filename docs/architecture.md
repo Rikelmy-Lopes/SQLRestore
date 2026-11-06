@@ -45,7 +45,7 @@ This is the intended organization. Add modules under the relevant directory as t
 
 ## Restore
 
-The backup is restored using the database connection. The adapter connects to the database and runs the `.sql` file through this connection. The restore does not use a transaction. If an error occurs or the user cancels, the restore stops.
+The backup is restored using the database connection. The adapter reads the `.sql` file as a stream, statement by statement. `COPY ... FROM stdin` data is streamed directly to the database in bounded chunks, so large backups are not loaded into memory as a whole. The restore does not use a transaction. If an error occurs or the user cancels, the restore stops.
 
 ## Ports
 

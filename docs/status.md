@@ -18,6 +18,7 @@ Features already done.
 - [x] Remember the last `.sql` file in the configuration
 - [x] Show the restore duration in the result
 - [x] Lock connection fields and database recreation checkbox while restoring
+- [x] Stream large `.sql` files and `COPY` data without loading the whole file
 - [x] Light and dark themes
 - [x] i18n with `.json` files (English)
 - [x] Config file (`config.json` in AppData): theme, language and connection
