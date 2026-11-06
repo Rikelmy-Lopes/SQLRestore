@@ -11,6 +11,8 @@
   "connection.user": "User",
   "connection.password": "Password",
   "connection.database": "Database",
+  "connection.use_file_name_as_database": "Use the backup file name as the database name",
+  "connection.use_file_name_as_database.hint": "The database name comes from the selected .sql file, without the .sql extension.",
   "connection.recreate_database": "Delete and recreate the database before restoring",
   "connection.recreate_database.hint": "All data in the target database will be lost. A confirmation is required before every restore.",
   "backup.title": "Backup file",

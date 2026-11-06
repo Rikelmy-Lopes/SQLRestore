@@ -16,6 +16,7 @@ Features already done.
 - [x] Restore progress and result
 - [x] Separate loading spinner and progress bar
 - [x] Remember the last `.sql` file in the configuration
+- [x] Optional use of the `.sql` file name as the database name
 - [x] Show the restore duration in the result
 - [x] Lock connection fields and database recreation checkbox while restoring
 - [x] Stream large `.sql` files and `COPY` data without loading the whole file

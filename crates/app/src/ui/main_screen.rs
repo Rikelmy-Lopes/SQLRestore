@@ -11,6 +11,8 @@ use super::status::Status;
 impl SqlRestoreApp {
     pub(super) fn draw_main_screen(&mut self, ui: &mut egui::Ui) {
         let can_edit = self.task.is_none();
+        let database_from_file =
+            self.config.use_file_name_as_database && self.backup_path.is_some();
         ui.add_space(8.0);
         ui.heading(self.i18n.t("connection.title"));
 
@@ -45,11 +47,29 @@ impl SqlRestoreApp {
 
                 ui.label(self.i18n.t("connection.database"));
                 ui.add_enabled(
-                    can_edit,
+                    can_edit && !database_from_file,
                     egui::TextEdit::singleline(&mut self.config.connection.database),
                 );
                 ui.end_row();
             });
+
+        let use_file_name_label = self.i18n.t("connection.use_file_name_as_database");
+        let use_file_name_changed = ui
+            .add_enabled(
+                can_edit,
+                egui::Checkbox::new(
+                    &mut self.config.use_file_name_as_database,
+                    use_file_name_label,
+                ),
+            )
+            .changed();
+        ui.label(
+            egui::RichText::new(self.i18n.t("connection.use_file_name_as_database.hint")).weak(),
+        );
+        if use_file_name_changed {
+            self.sync_database_from_backup();
+            self.persist_config();
+        }
 
         let port = self
             .port_input
@@ -94,6 +114,7 @@ impl SqlRestoreApp {
         if select_clicked && let Some(path) = self.select_backup.execute() {
             self.backup_path = Some(path.clone());
             self.config.last_backup_file = Some(path);
+            self.sync_database_from_backup();
             self.persist_config();
             if matches!(self.status, Status::Failed(_) | Status::Cancelled) {
                 self.status = Status::Idle;

@@ -85,6 +85,8 @@ mod tests {
             "connection.user",
             "connection.password",
             "connection.database",
+            "connection.use_file_name_as_database",
+            "connection.use_file_name_as_database.hint",
             "connection.recreate_database",
             "connection.recreate_database.hint",
             "backup.title",

@@ -1,6 +1,6 @@
 //! Application configuration model.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
@@ -13,6 +13,20 @@ pub const FALLBACK_LANGUAGE: &str = "en";
 const DEFAULT_HOST: &str = "localhost";
 const DEFAULT_PORT: u16 = 5432;
 const DEFAULT_USER: &str = "postgres";
+const DEFAULT_USE_FILE_NAME_AS_DATABASE: bool = true;
+
+/// Database name taken from a backup file name, without the `.sql` extension.
+///
+/// Returns `None` when the file name is empty or contains only the extension.
+pub fn database_name_from_backup(path: &Path) -> Option<String> {
+    let stem = path.file_stem()?.to_string_lossy();
+    let name = stem.trim();
+    if name.is_empty() || name.eq_ignore_ascii_case(".sql") {
+        None
+    } else {
+        Some(name.to_string())
+    }
+}
 
 /// Interface theme.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -89,9 +103,16 @@ pub struct AppConfig {
     /// Deletes and recreates the target database before a restore.
     #[serde(default)]
     pub recreate_database: bool,
+    /// Uses the backup file name, without `.sql`, as the target database.
+    #[serde(default = "default_use_file_name_as_database")]
+    pub use_file_name_as_database: bool,
     /// Backup file used by the last restore.
     #[serde(default)]
     pub last_backup_file: Option<PathBuf>,
+}
+
+fn default_use_file_name_as_database() -> bool {
+    DEFAULT_USE_FILE_NAME_AS_DATABASE
 }
 
 impl Default for AppConfig {
@@ -101,6 +122,7 @@ impl Default for AppConfig {
             language: FALLBACK_LANGUAGE.to_string(),
             connection: ConnectionSettings::default(),
             recreate_database: false,
+            use_file_name_as_database: DEFAULT_USE_FILE_NAME_AS_DATABASE,
             last_backup_file: None,
         }
     }
@@ -120,7 +142,33 @@ mod tests {
         assert_eq!(config.connection.user, "postgres");
         assert!(config.connection.database.is_empty());
         assert!(!config.recreate_database);
+        assert!(config.use_file_name_as_database);
         assert!(config.last_backup_file.is_none());
+    }
+
+    #[test]
+    fn database_name_comes_from_the_file_stem() {
+        assert_eq!(
+            database_name_from_backup(Path::new("C:/backups/shop.sql")),
+            Some("shop".to_string())
+        );
+        assert_eq!(
+            database_name_from_backup(Path::new("C:/backups/shop.backup.sql")),
+            Some("shop.backup".to_string())
+        );
+        assert_eq!(
+            database_name_from_backup(Path::new("C:/backups/SHOP.SQL")),
+            Some("SHOP".to_string())
+        );
+    }
+
+    #[test]
+    fn database_name_is_none_without_a_file_name() {
+        assert_eq!(database_name_from_backup(Path::new("")), None);
+        assert_eq!(
+            database_name_from_backup(Path::new("C:/backups/.sql")),
+            None
+        );
     }
 
     #[test]

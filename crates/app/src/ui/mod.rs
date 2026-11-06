@@ -9,7 +9,9 @@ use std::sync::mpsc::TryRecvError;
 use std::time::Duration;
 
 use eframe::egui;
-use sqlrestore_core::domain::config::{AppConfig, SUPPORTED_LANGUAGES, Theme};
+use sqlrestore_core::domain::config::{
+    AppConfig, SUPPORTED_LANGUAGES, Theme, database_name_from_backup,
+};
 use sqlrestore_core::domain::restore::RestoreRequest;
 
 use crate::commands::{
@@ -50,6 +52,12 @@ impl SqlRestoreApp {
             .last_backup_file
             .clone()
             .filter(|path| path.is_file());
+        let mut config = config;
+        if config.use_file_name_as_database
+            && let Some(name) = backup_path.as_deref().and_then(database_name_from_backup)
+        {
+            config.connection.database = name;
+        }
 
         Self {
             commands,
@@ -171,6 +179,19 @@ impl SqlRestoreApp {
         if let Err(error) = self.commands.save_config(self.config.clone()) {
             self.commands
                 .log_warning(&format!("Configuration could not be saved: {error}"));
+        }
+    }
+
+    /// Copies the selected backup file name into the database field when the
+    /// option is enabled.
+    pub(super) fn sync_database_from_backup(&mut self) {
+        if self.config.use_file_name_as_database
+            && let Some(name) = self
+                .backup_path
+                .as_deref()
+                .and_then(database_name_from_backup)
+        {
+            self.config.connection.database = name;
         }
     }
 }

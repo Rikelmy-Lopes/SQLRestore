@@ -93,6 +93,11 @@ fn config_from_value(value: &Value) -> AppConfig {
         .and_then(Value::as_bool)
         .unwrap_or(defaults.recreate_database);
 
+    let use_file_name_as_database = value
+        .get("use_file_name_as_database")
+        .and_then(Value::as_bool)
+        .unwrap_or(defaults.use_file_name_as_database);
+
     let last_backup_file = value
         .get("last_backup_file")
         .and_then(Value::as_str)
@@ -106,6 +111,7 @@ fn config_from_value(value: &Value) -> AppConfig {
         language,
         connection,
         recreate_database,
+        use_file_name_as_database,
         last_backup_file,
     }
 }
@@ -179,6 +185,7 @@ mod tests {
                 database: "shop".to_string(),
             },
             recreate_database: true,
+            use_file_name_as_database: false,
             last_backup_file: Some(PathBuf::from("C:/backups/shop.sql")),
         };
         repository.save(&config).expect("save");
@@ -223,7 +230,19 @@ mod tests {
         assert_eq!(config.connection.user, "postgres");
         assert_eq!(config.connection.database, "shop");
         assert!(!config.recreate_database);
+        assert!(config.use_file_name_as_database);
         assert!(config.last_backup_file.is_none());
+    }
+
+    #[test]
+    fn invalid_use_file_name_flag_falls_back_to_true() {
+        let (directory, repository) = repository();
+        fs::write(
+            directory.path().join("config.json"),
+            r#"{"use_file_name_as_database": "yes"}"#,
+        )
+        .expect("write");
+        assert!(repository.load().expect("load").use_file_name_as_database);
     }
 
     #[test]
