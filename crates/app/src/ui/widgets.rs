@@ -120,6 +120,7 @@ impl<'a> TextField<'a> {
                 .margin(egui::Margin::symmetric(11, 7))
                 .desired_width(self.width)
                 .min_size(egui::vec2(self.width, FIELD_HEIGHT))
+                .align(egui::Align2::LEFT_CENTER)
                 .background_color(palette.input)
                 .text_color(palette.text)
                 .password(self.password);
