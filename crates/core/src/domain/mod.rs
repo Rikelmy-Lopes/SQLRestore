@@ -3,5 +3,6 @@
 pub mod cancellation;
 pub mod config;
 pub mod error;
+pub mod history;
 pub mod restore;
 pub mod sql_script;

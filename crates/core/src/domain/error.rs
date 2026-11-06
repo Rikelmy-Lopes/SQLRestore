@@ -11,6 +11,15 @@ pub enum ConfigError {
     Parse(String),
 }
 
+/// Error raised while reading or writing the restore history.
+#[derive(Debug, Error)]
+pub enum HistoryError {
+    #[error("could not access the history file: {0}")]
+    Io(#[from] std::io::Error),
+    #[error("could not parse the history file: {0}")]
+    Parse(String),
+}
+
 /// Error raised while using the system keychain.
 #[derive(Debug, Error)]
 pub enum PasswordError {

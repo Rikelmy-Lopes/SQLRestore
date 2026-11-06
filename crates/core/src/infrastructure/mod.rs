@@ -2,6 +2,7 @@
 
 pub mod config;
 pub mod database;
+pub mod history;
 pub mod logger;
 pub mod password;
 pub mod paths;

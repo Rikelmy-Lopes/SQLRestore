@@ -10,15 +10,18 @@ use std::sync::Arc;
 
 use sqlrestore_core::application::commands::{
     CancelRestoreCommandHandler, LoadConfigCommand, LoadConfigCommandHandler, LoadPasswordCommand,
-    LoadPasswordCommandHandler, RestoreCommandHandler, SaveConfigCommand, SaveConfigCommandHandler,
-    SavePasswordCommand, SavePasswordCommandHandler,
+    LoadPasswordCommandHandler, LoadRestoreHistoryCommand, LoadRestoreHistoryCommandHandler,
+    RecordRestoreHistoryCommandHandler, RestoreCommandHandler, SaveConfigCommand,
+    SaveConfigCommandHandler, SavePasswordCommand, SavePasswordCommandHandler,
 };
 use sqlrestore_core::domain::cancellation::Cancellation;
 use sqlrestore_core::domain::config::{AppConfig, ConnectionSettings};
-use sqlrestore_core::domain::error::{ConfigError, PasswordError};
+use sqlrestore_core::domain::error::{ConfigError, HistoryError, PasswordError};
+use sqlrestore_core::domain::history::RestoreHistoryEntry;
 use sqlrestore_core::domain::restore::RestoreRequest;
 use sqlrestore_core::ports::config_repository::ConfigRepository;
 use sqlrestore_core::ports::database_restorer::DatabaseRestorer;
+use sqlrestore_core::ports::history_repository::HistoryRepository;
 use sqlrestore_core::ports::logger::{LogLevel, Logger};
 use sqlrestore_core::ports::password_store::PasswordStore;
 
@@ -32,6 +35,8 @@ pub struct AppCommands {
     save_password: SavePasswordCommandHandler,
     restore: Arc<RestoreCommandHandler>,
     cancel: Arc<CancelRestoreCommandHandler>,
+    record_history: Arc<RecordRestoreHistoryCommandHandler>,
+    load_history: LoadRestoreHistoryCommandHandler,
     cancellation: Cancellation,
     logger: Arc<dyn Logger>,
 }
@@ -41,6 +46,7 @@ impl AppCommands {
         config_repository: Arc<dyn ConfigRepository>,
         password_store: Arc<dyn PasswordStore>,
         restorer: Arc<dyn DatabaseRestorer>,
+        history_repository: Arc<dyn HistoryRepository>,
         logger: Arc<dyn Logger>,
     ) -> Self {
         let cancellation = Cancellation::new();
@@ -59,6 +65,10 @@ impl AppCommands {
                 logger.clone(),
                 cancellation.clone(),
             )),
+            record_history: Arc::new(RecordRestoreHistoryCommandHandler::new(
+                history_repository.clone(),
+            )),
+            load_history: LoadRestoreHistoryCommandHandler::new(history_repository),
             cancellation,
             logger,
         }
@@ -94,7 +104,18 @@ impl AppCommands {
 
     pub fn start_restore(&self, request: RestoreRequest) -> RestoreTask {
         self.cancellation.reset();
-        spawn_restore(Arc::clone(&self.restore), Arc::clone(&self.cancel), request)
+        spawn_restore(
+            Arc::clone(&self.restore),
+            Arc::clone(&self.cancel),
+            Arc::clone(&self.record_history),
+            Arc::clone(&self.logger),
+            request,
+        )
+    }
+
+    /// Loads the restore history, oldest first.
+    pub fn load_history(&self) -> Result<Vec<RestoreHistoryEntry>, HistoryError> {
+        self.load_history.execute(LoadRestoreHistoryCommand)
     }
 
     /// Writes a non-fatal warning to the log.

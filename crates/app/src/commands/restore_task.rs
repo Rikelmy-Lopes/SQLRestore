@@ -1,10 +1,13 @@
 //! Background restore task and its events.
 
 use sqlrestore_core::application::commands::{
-    CancelRestoreCommand, CancelRestoreCommandHandler, RestoreCommand, RestoreCommandHandler,
+    CancelRestoreCommand, CancelRestoreCommandHandler, RecordRestoreHistoryCommand,
+    RecordRestoreHistoryCommandHandler, RestoreCommand, RestoreCommandHandler,
 };
 use sqlrestore_core::domain::error::RestoreError;
+use sqlrestore_core::domain::history::RestoreHistoryEntry;
 use sqlrestore_core::domain::restore::{RestoreReport, RestoreRequest};
+use sqlrestore_core::ports::logger::{LogLevel, Logger};
 use std::sync::Arc;
 use std::sync::mpsc::{self, Receiver, TryRecvError};
 use std::thread;
@@ -49,18 +52,24 @@ impl RestoreTask {
 pub fn spawn_restore(
     handler: Arc<RestoreCommandHandler>,
     cancel_handler: Arc<CancelRestoreCommandHandler>,
+    history: Arc<RecordRestoreHistoryCommandHandler>,
+    logger: Arc<dyn Logger>,
     request: RestoreRequest,
 ) -> RestoreTask {
     let (sender, receiver) = mpsc::channel();
 
     thread::spawn(move || {
+        let history_request = request.clone();
         let progress_sender = sender.clone();
         let result = handler.execute(RestoreCommand { request }, &move |progress| {
             let _ = progress_sender.send(RestoreEvent::Progress(progress.fraction()));
         });
 
         let outcome = match result {
-            Ok(report) => RestoreOutcome::Success(report),
+            Ok(report) => {
+                record_history(history.as_ref(), logger.as_ref(), &history_request, &report);
+                RestoreOutcome::Success(report)
+            }
             Err(RestoreError::Cancelled) => RestoreOutcome::Cancelled,
             Err(error) => RestoreOutcome::Failed(error.to_string()),
         };
@@ -70,5 +79,20 @@ pub fn spawn_restore(
     RestoreTask {
         receiver,
         cancel_handler,
+    }
+}
+
+fn record_history(
+    history: &RecordRestoreHistoryCommandHandler,
+    logger: &dyn Logger,
+    request: &RestoreRequest,
+    report: &RestoreReport,
+) {
+    let entry = RestoreHistoryEntry::now_from_restore(request, report);
+    if let Err(error) = history.execute(RecordRestoreHistoryCommand { entry }) {
+        logger.log(
+            LogLevel::Warning,
+            &format!("Restore history could not be saved: {error}"),
+        );
     }
 }

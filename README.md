@@ -11,6 +11,7 @@ Cross-platform desktop application to restore `.sql` backup files on PostgreSQL.
 - Multiple languages (English is the primary language).
 - Configuration saved in a `config.json` file in the AppData folder of each system. The password is saved in the system keychain, not in the file.
 - Log file in the AppData folder of each system, without secrets.
+- Restore history (last 100 successful restores) saved in `history.json`, with a dialog to view it.
 - Cross-platform.
 
 ## Requirements

@@ -15,6 +15,11 @@ pub fn config_path() -> PathBuf {
     app_data_dir().join("config.json")
 }
 
+/// Path of `history.json`.
+pub fn history_path() -> PathBuf {
+    app_data_dir().join("history.json")
+}
+
 /// Path of the active log file.
 pub fn log_path() -> PathBuf {
     app_data_dir().join("logs").join("sqlrestore.log")
@@ -57,6 +62,7 @@ mod tests {
     fn paths_end_with_application_name() {
         assert!(app_data_dir().ends_with(APP_NAME));
         assert!(config_path().ends_with("config.json"));
+        assert!(history_path().ends_with("history.json"));
         assert!(log_path().ends_with("sqlrestore.log"));
     }
 }

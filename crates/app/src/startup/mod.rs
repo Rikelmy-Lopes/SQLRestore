@@ -6,6 +6,7 @@ use eframe::egui;
 use sqlrestore_core::domain::config::AppConfig;
 use sqlrestore_core::infrastructure::config::FileConfigRepository;
 use sqlrestore_core::infrastructure::database::PostgresRestorer;
+use sqlrestore_core::infrastructure::history::FileHistoryRepository;
 use sqlrestore_core::infrastructure::logger::FileLogger;
 use sqlrestore_core::infrastructure::password::KeyringPasswordStore;
 use sqlrestore_core::infrastructure::translations::JsonTranslationProvider;
@@ -33,10 +34,12 @@ pub fn run() -> eframe::Result<()> {
     let config_repository = Arc::new(FileConfigRepository::default_location());
     let password_store = Arc::new(KeyringPasswordStore);
     let restorer = Arc::new(PostgresRestorer::new());
+    let history_repository = Arc::new(FileHistoryRepository::default_location());
     let commands = AppCommands::new(
         config_repository,
         password_store,
         restorer,
+        history_repository,
         Arc::clone(&logger),
     );
 

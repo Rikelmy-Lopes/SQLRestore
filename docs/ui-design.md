@@ -28,7 +28,7 @@ The theme is saved in `config.json`.
 
 ## Main Screen
 
-1. **Top bar:** app title, theme switch, language selector.
+1. **Top bar:** app title, history button, theme switch, language selector.
 2. **Connection:** host, port, user, password, database.
 3. **Backup file:** file path and a button to select the `.sql` file.
 4. **Action:** restore button and cancel button.
@@ -64,5 +64,6 @@ The theme is saved in `config.json`.
 - The cancel button is always present. It is enabled only while a restore is running.
 - While a restore is running, the connection fields, the database recreation checkbox and the file selector are disabled. Only Cancel, the theme switch and the language selector stay enabled.
 - Cancel stops the restore and shows a translated message.
+- The History button opens a dialog with all successful restores. The newest entry is first.
 - The UI does not freeze during restore (work runs outside the UI thread).
 - Errors show a clear translated message.

@@ -51,6 +51,7 @@ The backup is restored using the database connection. The adapter reads the `.sq
 
 - `DatabaseRestorer`: restores a file using a database connection and supports cancel. Each supported database has its own adapter (first: PostgreSQL).
 - `ConfigRepository`: reads and writes the config.
+- `HistoryRepository`: reads and writes the restore history.
 - `PasswordStore`: saves, reads and deletes the connection password. The adapter uses the system keychain (`keyring` crate).
 - `TranslationProvider`: returns text by key and language.
 - `Logger`: writes log entries. The core uses only this port, not a specific log library.
@@ -83,6 +84,16 @@ File `config.json`, saved in the AppData folder of each system:
 ```
 
 `last_backup_file` is the `.sql` file selected by the user in the previous session.
+
+## History
+
+Each successful restore adds one entry to `history.json` in the AppData folder. The entry has the file name, target database, connection, local date and time, and duration. The file is a JSON array, oldest first. When it has more than 100 entries, the oldest entries are removed. The History button opens a dialog with every entry, newest first.
+
+| System | Path |
+|--------|------|
+| Windows | `%APPDATA%\\SQLRestore\\history.json` |
+| macOS | `~/Library/Application Support/SQLRestore/history.json` |
+| Linux | `~/.config/SQLRestore/history.json` |
 
 ## Password
 

@@ -24,6 +24,7 @@ Features already done.
 - [x] i18n with `.json` files (English)
 - [x] Config file (`config.json` in AppData): theme, language and connection
 - [x] Log file in AppData with size limit and rotation (`Logger` port)
+- [x] Restore history in `history.json` (last 100 successful restores) with a dialog to view it
 - [x] Detailed PostgreSQL errors in the log and the exact failing source line
 - [x] Log entries on the terminal in debug builds
 - [x] Cross-platform support

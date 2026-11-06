@@ -1,6 +1,7 @@
 //! Main window of the application.
 
 mod duration;
+mod history;
 mod main_screen;
 mod status;
 mod style;
@@ -14,6 +15,7 @@ use eframe::egui;
 use sqlrestore_core::domain::config::{
     AppConfig, SUPPORTED_LANGUAGES, Theme, database_name_from_backup,
 };
+use sqlrestore_core::domain::history::RestoreHistoryEntry;
 use sqlrestore_core::domain::restore::RestoreRequest;
 
 use crate::commands::{
@@ -37,6 +39,9 @@ pub struct SqlRestoreApp {
     task: Option<RestoreTask>,
     pending_restore: Option<RestoreRequest>,
     select_backup: SelectBackupCommandHandler,
+    history_open: bool,
+    history_entries: Vec<RestoreHistoryEntry>,
+    history_error: Option<String>,
 }
 
 impl SqlRestoreApp {
@@ -72,6 +77,9 @@ impl SqlRestoreApp {
             task: None,
             pending_restore: None,
             select_backup: SelectBackupCommandHandler,
+            history_open: false,
+            history_entries: Vec::new(),
+            history_error: None,
         }
     }
 
@@ -122,6 +130,7 @@ impl SqlRestoreApp {
     fn draw_top_bar(&mut self, ui: &mut egui::Ui) {
         let mut selected_language = None;
         let mut toggle_theme = false;
+        let mut open_history = false;
         let context = ui.ctx().clone();
         let palette = Palette::for_theme(self.config.theme);
 
@@ -151,6 +160,10 @@ impl SqlRestoreApp {
                         );
                         if ui.button(theme_text).clicked() {
                             toggle_theme = true;
+                        }
+
+                        if ui.button(self.i18n.t("history.open")).clicked() {
+                            open_history = true;
                         }
 
                         let selected_text =
@@ -184,6 +197,10 @@ impl SqlRestoreApp {
             self.config.theme = self.config.theme.toggled();
             style::apply_style(&context, self.config.theme);
             self.persist_config();
+        }
+
+        if open_history {
+            self.open_history();
         }
     }
 
@@ -226,5 +243,7 @@ impl eframe::App for SqlRestoreApp {
 
         let confirmation_context = ui.ctx().clone();
         self.draw_recreate_confirmation(&confirmation_context);
+        let history_context = ui.ctx().clone();
+        self.draw_history_dialog(&history_context);
     }
 }
