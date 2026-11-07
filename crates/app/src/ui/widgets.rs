@@ -155,7 +155,23 @@ pub fn path_box(
             ui.add(egui::Label::new(egui::RichText::new(text).size(13.5).color(color)).truncate());
         })
         .response;
-    response.interact(egui::Sense::click())
+    let response = response
+        .interact(egui::Sense::click())
+        .on_hover_cursor(egui::CursorIcon::PointingHand);
+    if response.hovered() {
+        ui.painter().rect_filled(
+            response.rect,
+            egui::CornerRadius::same(9),
+            Palette::tint(palette.primary, 12),
+        );
+        ui.painter().rect_stroke(
+            response.rect,
+            egui::CornerRadius::same(9),
+            egui::Stroke::new(1.5, palette.primary),
+            egui::StrokeKind::Inside,
+        );
+    }
+    response
 }
 
 /// Button variants.

@@ -63,6 +63,7 @@ The theme is saved in `config.json`.
 - The test connection button is enabled when the connection fields are filled. The result is shown right below it: success or the database error. Editing a connection field clears the result.
 - The last selected `.sql` file is restored from the configuration at startup.
 - Clicking the selected file path opens a dropdown with the last five used `.sql` files, full path included. Choosing one selects it without opening the file dialog. Duplicates are not stored.
+- Hovering the file path shows a primary-color border, a light tint and a pointing-hand cursor.
 - The loading spinner is separate from the progress bar.
 - When "Delete and recreate the database" is enabled, a confirmation dialog with the database name is shown before each restore.
 - The cancel button is always present. It is enabled only while a restore is running.
