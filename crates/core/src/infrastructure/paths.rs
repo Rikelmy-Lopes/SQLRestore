@@ -33,9 +33,9 @@ fn home_dir() -> Option<PathBuf> {
 
 #[cfg(target_os = "windows")]
 fn base_dir() -> PathBuf {
-    std::env::var_os("APPDATA")
+    std::env::var_os("LOCALAPPDATA")
         .map(PathBuf::from)
-        .or_else(|| home_dir().map(|home| home.join("AppData").join("Roaming")))
+        .or_else(|| home_dir().map(|home| home.join("AppData").join("Local")))
         .unwrap_or_else(|| PathBuf::from("."))
 }
 
@@ -48,9 +48,9 @@ fn base_dir() -> PathBuf {
 
 #[cfg(not(any(target_os = "windows", target_os = "macos")))]
 fn base_dir() -> PathBuf {
-    std::env::var_os("XDG_CONFIG_HOME")
+    std::env::var_os("XDG_DATA_HOME")
         .map(PathBuf::from)
-        .or_else(|| home_dir().map(|home| home.join(".config")))
+        .or_else(|| home_dir().map(|home| home.join(".local").join("share")))
         .unwrap_or_else(|| PathBuf::from("."))
 }
 

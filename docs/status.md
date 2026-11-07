@@ -24,8 +24,8 @@ Features already done.
 - [x] Stream large `.sql` files and `COPY` data without loading the whole file
 - [x] Light and dark themes
 - [x] i18n with `.json` files (English)
-- [x] Config file (`config.json` in AppData): theme, language and connection
-- [x] Log file in AppData with size limit and rotation (`Logger` port)
+- [x] Config file (`config.json` in the local application data folder): theme, language and connection
+- [x] Log file in the local application data folder with size limit and rotation (`Logger` port)
 - [x] Restore history in `history.json` (last 100 successful restores) with a dialog to view it
 - [x] Detailed PostgreSQL errors in the log and the exact failing source line
 - [x] Log entries on the terminal in debug builds

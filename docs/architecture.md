@@ -60,13 +60,13 @@ To support a new database, add a new adapter that implements `DatabaseRestorer`.
 
 ## Configuration
 
-File `config.json`, saved in the AppData folder of each system:
+File `config.json`, saved in the local application data folder of each system:
 
 | System | Path |
 |--------|------|
-| Windows | `%APPDATA%\\SQLRestore\\config.json` |
+| Windows | `%LOCALAPPDATA%\\SQLRestore\\config.json` |
 | macOS | `~/Library/Application Support/SQLRestore/config.json` |
-| Linux | `~/.config/SQLRestore/config.json` |
+| Linux | `$XDG_DATA_HOME/SQLRestore/config.json` (default `~/.local/share/SQLRestore/config.json`) |
 
 ```json
 {
@@ -79,21 +79,22 @@ File `config.json`, saved in the AppData folder of each system:
     "database": ""
   },
   "recreate_database": false,
-  "last_backup_file": null
+  "last_backup_file": null,
+  "recent_backup_files": []
 }
 ```
 
-`last_backup_file` is the `.sql` file selected by the user in the previous session.
+`last_backup_file` is the `.sql` file selected by the user in the previous session. `recent_backup_files` holds the last five used `.sql` files, newest first.
 
 ## History
 
-Each successful restore adds one entry to `history.json` in the AppData folder. The entry has the file name, target database, connection, local date and time, and duration. The file is a JSON array, oldest first. When it has more than 100 entries, the oldest entries are removed. The History button opens a dialog with every entry, newest first.
+Each successful restore adds one entry to `history.json` in the local application data folder. The entry has the file name, target database, connection, local date and time, and duration. The file is a JSON array, oldest first. When it has more than 100 entries, the oldest entries are removed. The History button opens a dialog with every entry, newest first.
 
 | System | Path |
 |--------|------|
-| Windows | `%APPDATA%\\SQLRestore\\history.json` |
+| Windows | `%LOCALAPPDATA%\\SQLRestore\\history.json` |
 | macOS | `~/Library/Application Support/SQLRestore/history.json` |
-| Linux | `~/.config/SQLRestore/history.json` |
+| Linux | `$XDG_DATA_HOME/SQLRestore/history.json` (default `~/.local/share/SQLRestore/history.json`) |
 
 ## Password
 
@@ -138,9 +139,9 @@ The program writes a log file to find problems after a restore fails.
 
 | System | Path |
 |--------|------|
-| Windows | `%APPDATA%\\SQLRestore\\logs\\sqlrestore.log` |
+| Windows | `%LOCALAPPDATA%\\SQLRestore\\logs\\sqlrestore.log` |
 | macOS | `~/Library/Application Support/SQLRestore/logs/sqlrestore.log` |
-| Linux | `~/.config/SQLRestore/logs/sqlrestore.log` |
+| Linux | `$XDG_DATA_HOME/SQLRestore/logs/sqlrestore.log` (default `~/.local/share/SQLRestore/logs/sqlrestore.log`) |
 
 - Each entry has date, time, level and message.
 - In debug builds each entry is also written to the terminal (stderr).
