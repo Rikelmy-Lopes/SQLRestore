@@ -8,6 +8,7 @@ mod record_restore_history;
 mod restore;
 mod save_config;
 mod save_password;
+mod test_connection;
 
 pub use cancel_restore::{CancelRestoreCommand, CancelRestoreCommandHandler};
 pub use load_config::{LoadConfigCommand, LoadConfigCommandHandler};
@@ -17,3 +18,4 @@ pub use record_restore_history::{RecordRestoreHistoryCommand, RecordRestoreHisto
 pub use restore::{RestoreCommand, RestoreCommandHandler};
 pub use save_config::{SaveConfigCommand, SaveConfigCommandHandler};
 pub use save_password::{SavePasswordCommand, SavePasswordCommandHandler};
+pub use test_connection::{TestConnectionCommand, TestConnectionCommandHandler};

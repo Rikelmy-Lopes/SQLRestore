@@ -19,11 +19,12 @@ use sqlrestore_core::domain::history::RestoreHistoryEntry;
 use sqlrestore_core::domain::restore::RestoreRequest;
 
 use crate::commands::{
-    AppCommands, RestoreEvent, RestoreOutcome, RestoreTask, SelectBackupCommandHandler,
+    AppCommands, ConnectionTestTask, RestoreEvent, RestoreOutcome, RestoreTask,
+    SelectBackupCommandHandler,
 };
 use crate::i18n::I18n;
 
-use status::Status;
+use status::{ConnectionStatus, Status};
 use style::Palette;
 
 /// eframe application.
@@ -37,6 +38,8 @@ pub struct SqlRestoreApp {
     status: Status,
     progress: f32,
     task: Option<RestoreTask>,
+    connection_test: Option<ConnectionTestTask>,
+    connection_status: ConnectionStatus,
     pending_restore: Option<RestoreRequest>,
     select_backup: SelectBackupCommandHandler,
     history_open: bool,
@@ -75,6 +78,8 @@ impl SqlRestoreApp {
             status: Status::Idle,
             progress: 0.0,
             task: None,
+            connection_test: None,
+            connection_status: ConnectionStatus::Idle,
             pending_restore: None,
             select_backup: SelectBackupCommandHandler,
             history_open: false,
@@ -124,6 +129,30 @@ impl SqlRestoreApp {
         } else if disconnected && self.task.is_some() {
             self.task = None;
             self.status = Status::Failed(self.i18n.t("status.connection_lost"));
+        }
+    }
+
+    fn poll_connection_test(&mut self) {
+        let Some(task) = self.connection_test.as_ref() else {
+            return;
+        };
+
+        match task.try_recv() {
+            Ok(Some(Ok(()))) => {
+                self.connection_status = ConnectionStatus::Success;
+                self.connection_test = None;
+            }
+            Ok(Some(Err(error))) => {
+                self.connection_status = ConnectionStatus::Failed(error);
+                self.connection_test = None;
+            }
+            Ok(None) => {}
+            Err(TryRecvError::Disconnected) => {
+                self.connection_status =
+                    ConnectionStatus::Failed(self.i18n.t("status.connection_test_lost"));
+                self.connection_test = None;
+            }
+            Err(TryRecvError::Empty) => {}
         }
     }
 
@@ -228,8 +257,9 @@ impl SqlRestoreApp {
 impl eframe::App for SqlRestoreApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         self.poll_restore_events();
+        self.poll_connection_test();
 
-        if self.task.is_some() {
+        if self.task.is_some() || self.connection_test.is_some() {
             ui.ctx().request_repaint_after(Duration::from_millis(100));
         }
 

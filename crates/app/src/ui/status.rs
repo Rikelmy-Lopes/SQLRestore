@@ -11,3 +11,13 @@ pub enum Status {
     Cancelled,
     Failed(String),
 }
+
+/// Current connection test state shown next to its button.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub enum ConnectionStatus {
+    #[default]
+    Idle,
+    Testing,
+    Success,
+    Failed(String),
+}

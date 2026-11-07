@@ -186,6 +186,15 @@ mod tests {
                 .expect("result present")
         }
 
+        fn test_connection(
+            &self,
+            _connection: &ConnectionSettings,
+            _password: &str,
+            _recreate_database: bool,
+        ) -> Result<(), RestoreError> {
+            Ok(())
+        }
+
         fn cancel(&self) -> Result<(), RestoreError> {
             Ok(())
         }

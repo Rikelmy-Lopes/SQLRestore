@@ -5,7 +5,7 @@ use sqlrestore_core::domain::restore::RestoreRequest;
 
 use super::SqlRestoreApp;
 use super::duration::format_duration;
-use super::status::Status;
+use super::status::{ConnectionStatus, Status};
 use super::style::Palette;
 use super::widgets::{self, ButtonKind, MessageTone, TextField};
 
@@ -42,7 +42,9 @@ impl SqlRestoreApp {
 
         let mut use_file_name_changed = false;
         let mut recreate_changed = false;
+        let mut connection_changed = false;
         let mut select_clicked = false;
+        let mut test_clicked = false;
         let mut restore_clicked = false;
         let mut cancel_clicked = false;
 
@@ -62,6 +64,7 @@ impl SqlRestoreApp {
         let use_file_name_hint = self.i18n.t("connection.use_file_name_as_database.hint");
         let recreate_label = self.i18n.t("connection.recreate_database");
         let recreate_hint = self.i18n.t("connection.recreate_database.hint");
+        let test_label = self.i18n.t("connection.test");
 
         ui.add_space(12.0);
 
@@ -74,31 +77,35 @@ impl SqlRestoreApp {
 
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = COLUMN_GAP;
-                TextField::new(
+                connection_changed |= TextField::new(
                     &host_label,
                     &host_hint,
                     &mut self.config.connection.host,
                     host_width,
                 )
                 .enabled(can_edit)
-                .show(ui, palette);
-                TextField::new(&port_label, &port_hint, &mut self.port_input, port_width)
-                    .enabled(can_edit)
-                    .show(ui, palette);
+                .show(ui, palette)
+                .changed();
+                connection_changed |=
+                    TextField::new(&port_label, &port_hint, &mut self.port_input, port_width)
+                        .enabled(can_edit)
+                        .show(ui, palette)
+                        .changed();
             });
             ui.add_space(1.0);
 
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = COLUMN_GAP;
-                TextField::new(
+                connection_changed |= TextField::new(
                     &user_label,
                     &user_hint,
                     &mut self.config.connection.user,
                     host_width,
                 )
                 .enabled(can_edit)
-                .show(ui, palette);
-                TextField::new(
+                .show(ui, palette)
+                .changed();
+                connection_changed |= TextField::new(
                     &password_label,
                     &password_hint,
                     &mut self.password,
@@ -106,18 +113,20 @@ impl SqlRestoreApp {
                 )
                 .enabled(can_edit)
                 .password(true)
-                .show(ui, palette);
+                .show(ui, palette)
+                .changed();
             });
             ui.add_space(1.0);
 
-            TextField::new(
+            connection_changed |= TextField::new(
                 &database_label,
                 &database_hint,
                 &mut self.config.connection.database,
                 width,
             )
             .enabled(can_edit && !database_from_file)
-            .show(ui, palette);
+            .show(ui, palette)
+            .changed();
 
             if !port_is_valid {
                 ui.add_space(4.0);
@@ -147,6 +156,25 @@ impl SqlRestoreApp {
                 )
                 .changed();
             widgets::hint_text(ui, palette, &recreate_hint);
+
+            ui.add_space(10.0);
+            let can_test = can_edit
+                && self.connection_test.is_none()
+                && self.config.connection.is_complete()
+                && port_is_valid;
+            if widgets::button(
+                ui,
+                palette,
+                &test_label,
+                ButtonKind::Secondary,
+                can_test,
+                150.0,
+            )
+            .clicked()
+            {
+                test_clicked = true;
+            }
+            self.draw_connection_status(ui, palette);
         });
 
         ui.add_space(12.0);
@@ -269,6 +297,12 @@ impl SqlRestoreApp {
         if recreate_changed {
             self.persist_config();
         }
+        if connection_changed && self.connection_test.is_none() {
+            self.connection_status = ConnectionStatus::Idle;
+        }
+        if test_clicked && let Some(port) = port {
+            self.start_connection_test(port);
+        }
         if select_clicked && let Some(path) = self.select_backup.execute() {
             self.backup_path = Some(path.clone());
             self.config.last_backup_file = Some(path);
@@ -284,6 +318,37 @@ impl SqlRestoreApp {
         if cancel_clicked {
             self.cancel_restore();
         }
+    }
+
+    fn draw_connection_status(&self, ui: &mut egui::Ui, palette: &Palette) {
+        let (message, tone) = match &self.connection_status {
+            ConnectionStatus::Idle => return,
+            ConnectionStatus::Testing => {
+                (self.i18n.t("connection.test.testing"), MessageTone::Info)
+            }
+            ConnectionStatus::Success => {
+                (self.i18n.t("connection.test.success"), MessageTone::Success)
+            }
+            ConnectionStatus::Failed(error) => (
+                self.i18n
+                    .t_args("connection.test.failed", &[("error", error.clone())]),
+                MessageTone::Error,
+            ),
+        };
+
+        ui.add_space(8.0);
+        widgets::message_banner(ui, palette, &message, tone);
+    }
+
+    fn start_connection_test(&mut self, port: u16) {
+        let mut connection = self.config.connection.clone();
+        connection.port = port;
+        self.connection_status = ConnectionStatus::Testing;
+        self.connection_test = Some(self.commands.test_connection(
+            connection,
+            self.password.clone(),
+            self.config.recreate_database,
+        ));
     }
 
     fn start_restore(&mut self, port: u16) {

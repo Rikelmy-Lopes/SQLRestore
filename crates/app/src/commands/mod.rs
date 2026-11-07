@@ -2,9 +2,11 @@
 
 mod restore_task;
 mod select_backup;
+mod test_connection_task;
 
 pub use restore_task::{RestoreEvent, RestoreOutcome, RestoreTask};
 pub use select_backup::SelectBackupCommandHandler;
+pub use test_connection_task::ConnectionTestTask;
 
 use std::sync::Arc;
 
@@ -13,6 +15,7 @@ use sqlrestore_core::application::commands::{
     LoadPasswordCommandHandler, LoadRestoreHistoryCommand, LoadRestoreHistoryCommandHandler,
     RecordRestoreHistoryCommandHandler, RestoreCommandHandler, SaveConfigCommand,
     SaveConfigCommandHandler, SavePasswordCommand, SavePasswordCommandHandler,
+    TestConnectionCommandHandler,
 };
 use sqlrestore_core::domain::cancellation::Cancellation;
 use sqlrestore_core::domain::config::{AppConfig, ConnectionSettings};
@@ -26,6 +29,7 @@ use sqlrestore_core::ports::logger::{LogLevel, Logger};
 use sqlrestore_core::ports::password_store::PasswordStore;
 
 use restore_task::spawn_restore;
+use test_connection_task::spawn_connection_test;
 
 /// All handlers used by the main screen.
 pub struct AppCommands {
@@ -34,6 +38,7 @@ pub struct AppCommands {
     load_password: LoadPasswordCommandHandler,
     save_password: SavePasswordCommandHandler,
     restore: Arc<RestoreCommandHandler>,
+    test_connection: Arc<TestConnectionCommandHandler>,
     cancel: Arc<CancelRestoreCommandHandler>,
     record_history: Arc<RecordRestoreHistoryCommandHandler>,
     load_history: LoadRestoreHistoryCommandHandler,
@@ -59,6 +64,10 @@ impl AppCommands {
                 restorer.clone(),
                 logger.clone(),
                 cancellation.clone(),
+            )),
+            test_connection: Arc::new(TestConnectionCommandHandler::new(
+                restorer.clone(),
+                logger.clone(),
             )),
             cancel: Arc::new(CancelRestoreCommandHandler::new(
                 restorer,
@@ -116,6 +125,21 @@ impl AppCommands {
     /// Loads the restore history, oldest first.
     pub fn load_history(&self) -> Result<Vec<RestoreHistoryEntry>, HistoryError> {
         self.load_history.execute(LoadRestoreHistoryCommand)
+    }
+
+    /// Tests the connection outside the interface thread.
+    pub fn test_connection(
+        &self,
+        connection: ConnectionSettings,
+        password: String,
+        recreate_database: bool,
+    ) -> ConnectionTestTask {
+        spawn_connection_test(
+            Arc::clone(&self.test_connection),
+            connection,
+            password,
+            recreate_database,
+        )
     }
 
     /// Writes a non-fatal warning to the log.

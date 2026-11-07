@@ -29,7 +29,7 @@ The theme is saved in `config.json`.
 ## Main Screen
 
 1. **Top bar:** app title, history button, theme switch, language selector.
-2. **Connection:** host, port, user, password, database.
+2. **Connection:** host, port, user, password, database. A test button checks the connection before restoring.
 3. **Backup file:** file path and a button to select the `.sql` file.
 4. **Action:** restore button and cancel button.
 5. **Result area:** loading spinner, progress bar and success or error message. The success message includes the restore duration.
@@ -45,6 +45,8 @@ The theme is saved in `config.json`.
 |  Host [________]  Port [____]              |
 |  User [________]  Password [________]      |
 |  Database [______________]                 |
+|  [ Test connection ]                       |
+|  Connection successful. / Connection failed: ... |
 |                                            |
 | Backup file                                |
 |  [______________________] [Select]         |
@@ -58,6 +60,7 @@ The theme is saved in `config.json`.
 ## Behavior
 
 - The restore button is disabled until the connection and the file are filled.
+- The test connection button is enabled when the connection fields are filled. The result is shown right below it: success or the database error. Editing a connection field clears the result.
 - The last selected `.sql` file is restored from the configuration at startup.
 - The loading spinner is separate from the progress bar.
 - When "Delete and recreate the database" is enabled, a confirmation dialog with the database name is shown before each restore.

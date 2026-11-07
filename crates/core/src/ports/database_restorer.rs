@@ -1,6 +1,7 @@
 //! Database restore port.
 
 use crate::domain::cancellation::Cancellation;
+use crate::domain::config::ConnectionSettings;
 use crate::domain::error::RestoreError;
 use crate::domain::restore::{RestoreProgress, RestoreReport, RestoreRequest};
 
@@ -13,6 +14,17 @@ pub trait DatabaseRestorer: Send + Sync {
         cancellation: &Cancellation,
         progress: &dyn Fn(RestoreProgress),
     ) -> Result<RestoreReport, RestoreError>;
+
+    /// Checks that the connection values can open a database session.
+    ///
+    /// With `recreate_database`, the target database may not exist yet, so the
+    /// maintenance database is used instead.
+    fn test_connection(
+        &self,
+        connection: &ConnectionSettings,
+        password: &str,
+        recreate_database: bool,
+    ) -> Result<(), RestoreError>;
 
     /// Asks the database to stop the current query.
     fn cancel(&self) -> Result<(), RestoreError>;

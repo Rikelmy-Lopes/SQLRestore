@@ -20,6 +20,10 @@
   "connection.use_file_name_as_database.hint": "The database name comes from the selected .sql file, without the .sql extension.",
   "connection.recreate_database": "Delete and recreate the database before restoring",
   "connection.recreate_database.hint": "All data in the target database will be lost. A confirmation is required before every restore.",
+  "connection.test": "Test connection",
+  "connection.test.testing": "Testing connection...",
+  "connection.test.success": "Connection successful.",
+  "connection.test.failed": "Connection failed: {error}",
   "backup.title": "Backup file",
   "backup.select": "Select",
   "backup.no_file": "No file selected",
@@ -49,6 +53,7 @@
   "status.config_save_failed": "Could not save the configuration: {error}",
   "status.password_save_failed": "Could not save the password in the system keychain.",
   "status.connection_lost": "The restore stopped unexpectedly.",
+  "status.connection_test_lost": "The connection test stopped unexpectedly.",
   "duration.seconds": "{seconds} s",
   "duration.minutes": "{minutes} min {seconds} s",
   "duration.hours": "{hours} h {minutes} min {seconds} s"

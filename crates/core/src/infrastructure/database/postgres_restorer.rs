@@ -7,6 +7,7 @@ use std::time::Duration;
 use postgres::{CancelToken, Client, NoTls};
 
 use crate::domain::cancellation::Cancellation;
+use crate::domain::config::ConnectionSettings;
 use crate::domain::error::RestoreError;
 use crate::domain::restore::{
     RestoreProgress, RestoreReport, RestoreRequest, is_protected_database,
@@ -30,24 +31,28 @@ impl PostgresRestorer {
     }
 
     fn connect(request: &RestoreRequest, database: &str) -> Result<Client, RestoreError> {
-        Self::client_config(request, database)
-            .connect(NoTls)
-            .map_err(|error| RestoreError::Connection(error.to_string()))
+        Self::connect_to(&request.connection, &request.password, database)
     }
 
-    fn client_config(request: &RestoreRequest, database: &str) -> postgres::Config {
+    fn connect_to(
+        connection: &ConnectionSettings,
+        password: &str,
+        database: &str,
+    ) -> Result<Client, RestoreError> {
         let mut config = postgres::Config::new();
         config
-            .host(&request.connection.host)
-            .port(request.connection.port)
-            .user(&request.connection.user)
+            .host(&connection.host)
+            .port(connection.port)
+            .user(&connection.user)
             .dbname(database)
             .application_name("SQLRestore")
             .connect_timeout(CONNECT_TIMEOUT);
-        if !request.password.is_empty() {
-            config.password(&request.password);
+        if !password.is_empty() {
+            config.password(password);
         }
         config
+            .connect(NoTls)
+            .map_err(|error| RestoreError::Connection(error.to_string()))
     }
 
     fn recreate_database(request: &RestoreRequest) -> Result<(), RestoreError> {
@@ -126,6 +131,36 @@ impl DatabaseRestorer for PostgresRestorer {
         }
 
         outcome
+    }
+
+    fn test_connection(
+        &self,
+        connection: &ConnectionSettings,
+        password: &str,
+        recreate_database: bool,
+    ) -> Result<(), RestoreError> {
+        if connection.host.trim().is_empty() {
+            return Err(RestoreError::InvalidRequest("host is empty".to_string()));
+        }
+        if connection.port == 0 {
+            return Err(RestoreError::InvalidRequest("port is empty".to_string()));
+        }
+        if connection.user.trim().is_empty() {
+            return Err(RestoreError::InvalidRequest("user is empty".to_string()));
+        }
+        if connection.database.trim().is_empty() {
+            return Err(RestoreError::InvalidRequest(
+                "database is empty".to_string(),
+            ));
+        }
+
+        let database = if recreate_database {
+            MAINTENANCE_DATABASE
+        } else {
+            &connection.database
+        };
+        Self::connect_to(connection, password, database)?;
+        Ok(())
     }
 
     fn cancel(&self) -> Result<(), RestoreError> {

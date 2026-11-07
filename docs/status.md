@@ -12,6 +12,7 @@ Features already done.
 - [x] Optional delete and recreate of the target database before restore (with confirmation)
 - [x] Default config values when the file is missing or a value is invalid
 - [x] Database connection form
+- [x] Test the database connection before restoring (success and error shown)
 - [x] Select backup file
 - [x] Restore progress and result
 - [x] Separate loading spinner and progress bar
