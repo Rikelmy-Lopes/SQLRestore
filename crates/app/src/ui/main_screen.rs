@@ -1,5 +1,7 @@
 //! Main screen widgets.
 
+use std::path::PathBuf;
+
 use eframe::egui;
 use sqlrestore_core::domain::restore::RestoreRequest;
 
@@ -185,6 +187,7 @@ impl SqlRestoreApp {
             || self.i18n.t("backup.no_file"),
             |path| path.display().to_string(),
         );
+        let mut selected_recent = None;
 
         widgets::section_card(ui, palette, |ui| {
             widgets::section_title(ui, palette, &backup_title);
@@ -194,12 +197,19 @@ impl SqlRestoreApp {
 
             ui.horizontal(|ui| {
                 ui.spacing_mut().item_spacing.x = 12.0;
-                widgets::path_box(
+                let path_response = widgets::path_box(
                     ui,
                     palette,
                     &path_text,
                     path_width,
                     self.backup_path.is_some(),
+                );
+                show_recent_backup_menu(
+                    &path_response,
+                    &self.config.recent_backup_files,
+                    can_edit,
+                    path_width,
+                    &mut selected_recent,
                 );
                 if widgets::button(
                     ui,
@@ -304,19 +314,26 @@ impl SqlRestoreApp {
             self.start_connection_test(port);
         }
         if select_clicked && let Some(path) = self.select_backup.execute() {
-            self.backup_path = Some(path.clone());
-            self.config.last_backup_file = Some(path);
-            self.sync_database_from_backup();
-            self.persist_config();
-            if matches!(self.status, Status::Failed(_) | Status::Cancelled) {
-                self.status = Status::Idle;
-            }
+            self.apply_backup_path(path);
+        }
+        if let Some(path) = selected_recent {
+            self.apply_backup_path(path);
         }
         if restore_clicked && let Some(port) = port {
             self.start_restore(port);
         }
         if cancel_clicked {
             self.cancel_restore();
+        }
+    }
+
+    fn apply_backup_path(&mut self, path: PathBuf) {
+        self.backup_path = Some(path.clone());
+        self.config.remember_backup_file(path);
+        self.sync_database_from_backup();
+        self.persist_config();
+        if matches!(self.status, Status::Failed(_) | Status::Cancelled) {
+            self.status = Status::Idle;
         }
     }
 
@@ -508,4 +525,30 @@ impl SqlRestoreApp {
             ),
         }
     }
+}
+
+/// Shows the recent backup files below the path box.
+fn show_recent_backup_menu(
+    anchor: &egui::Response,
+    paths: &[PathBuf],
+    enabled: bool,
+    width: f32,
+    selected: &mut Option<PathBuf>,
+) {
+    if !enabled || paths.is_empty() {
+        return;
+    }
+
+    egui::Popup::menu(anchor).width(width).show(|ui| {
+        ui.set_min_width(width);
+        for path in paths {
+            let text = path.display().to_string();
+            let item = egui::Button::new(egui::RichText::new(text).size(12.5))
+                .frame(false)
+                .wrap();
+            if ui.add(item).clicked() {
+                *selected = Some(path.clone());
+            }
+        }
+    });
 }

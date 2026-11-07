@@ -6,7 +6,8 @@ use std::path::{Path, PathBuf};
 use serde_json::Value;
 
 use crate::domain::config::{
-    AppConfig, ConnectionSettings, FALLBACK_LANGUAGE, SUPPORTED_LANGUAGES, Theme,
+    AppConfig, ConnectionSettings, FALLBACK_LANGUAGE, RECENT_BACKUP_FILES_LIMIT,
+    SUPPORTED_LANGUAGES, Theme, same_path,
 };
 use crate::domain::error::ConfigError;
 use crate::infrastructure::paths;
@@ -106,6 +107,8 @@ fn config_from_value(value: &Value) -> AppConfig {
         .map(PathBuf::from)
         .or(defaults.last_backup_file);
 
+    let recent_backup_files = recent_files_from_value(value, last_backup_file.as_ref());
+
     AppConfig {
         theme,
         language,
@@ -113,7 +116,39 @@ fn config_from_value(value: &Value) -> AppConfig {
         recreate_database,
         use_file_name_as_database,
         last_backup_file,
+        recent_backup_files,
     }
+}
+
+/// Reads the recent backup list, removes duplicates and keeps the newest five.
+fn recent_files_from_value(value: &Value, last_backup_file: Option<&PathBuf>) -> Vec<PathBuf> {
+    let mut recent: Vec<PathBuf> = Vec::new();
+    if let Some(entries) = value.get("recent_backup_files").and_then(Value::as_array) {
+        for entry in entries {
+            let Some(path) = entry
+                .as_str()
+                .map(str::trim)
+                .filter(|path| !path.is_empty())
+                .map(PathBuf::from)
+            else {
+                continue;
+            };
+            if !recent.iter().any(|known| same_path(known, &path)) {
+                recent.push(path);
+            }
+            if recent.len() == RECENT_BACKUP_FILES_LIMIT {
+                break;
+            }
+        }
+    }
+
+    if recent.is_empty()
+        && let Some(path) = last_backup_file
+    {
+        recent.push(path.clone());
+    }
+
+    recent
 }
 
 fn connection_from_value(value: &Value, defaults: &ConnectionSettings) -> ConnectionSettings {
@@ -187,6 +222,10 @@ mod tests {
             recreate_database: true,
             use_file_name_as_database: false,
             last_backup_file: Some(PathBuf::from("C:/backups/shop.sql")),
+            recent_backup_files: vec![
+                PathBuf::from("C:/backups/shop.sql"),
+                PathBuf::from("C:/backups/other.sql"),
+            ],
         };
         repository.save(&config).expect("save");
         assert_eq!(repository.load().expect("load"), config);
@@ -201,6 +240,42 @@ mod tests {
         )
         .expect("write");
         assert!(repository.load().expect("load").last_backup_file.is_none());
+    }
+
+    #[test]
+    fn recent_files_are_deduplicated_and_limited() {
+        let (directory, repository) = repository();
+        fs::write(
+            directory.path().join("config.json"),
+            r#"{
+                "recent_backup_files": [
+                    "a.sql", "b.sql", "a.sql", "c.sql", "d.sql", "e.sql", "f.sql"
+                ]
+            }"#,
+        )
+        .expect("write");
+
+        let recent = repository.load().expect("load").recent_backup_files;
+        let expected = ["a.sql", "b.sql", "c.sql", "d.sql", "e.sql"]
+            .map(PathBuf::from)
+            .to_vec();
+        assert_eq!(recent, expected);
+    }
+
+    #[test]
+    fn recent_files_start_from_the_last_backup_file() {
+        let (directory, repository) = repository();
+        fs::write(
+            directory.path().join("config.json"),
+            r#"{"last_backup_file": "C:/backups/shop.sql"}"#,
+        )
+        .expect("write");
+
+        let config = repository.load().expect("load");
+        assert_eq!(
+            config.recent_backup_files,
+            vec![PathBuf::from("C:/backups/shop.sql")]
+        );
     }
 
     #[test]

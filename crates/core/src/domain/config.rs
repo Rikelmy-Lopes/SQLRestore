@@ -14,6 +14,8 @@ const DEFAULT_HOST: &str = "localhost";
 const DEFAULT_PORT: u16 = 5432;
 const DEFAULT_USER: &str = "postgres";
 const DEFAULT_USE_FILE_NAME_AS_DATABASE: bool = true;
+/// How many recent backup files the interface remembers.
+pub const RECENT_BACKUP_FILES_LIMIT: usize = 5;
 
 /// Database name taken from a backup file name, without the `.sql` extension.
 ///
@@ -109,6 +111,33 @@ pub struct AppConfig {
     /// Backup file used by the last restore.
     #[serde(default)]
     pub last_backup_file: Option<PathBuf>,
+    /// Most recently used backup files, newest first.
+    #[serde(default)]
+    pub recent_backup_files: Vec<PathBuf>,
+}
+
+impl AppConfig {
+    /// Adds a backup file to the recent list, newest first, without duplicates.
+    pub fn remember_backup_file(&mut self, path: PathBuf) {
+        self.last_backup_file = Some(path.clone());
+        self.recent_backup_files
+            .retain(|recent| !same_path(recent, &path));
+        self.recent_backup_files.insert(0, path);
+        self.recent_backup_files.truncate(RECENT_BACKUP_FILES_LIMIT);
+    }
+}
+
+/// Compares two paths, ignoring case on Windows.
+pub(crate) fn same_path(left: &Path, right: &Path) -> bool {
+    #[cfg(windows)]
+    {
+        left.to_string_lossy()
+            .eq_ignore_ascii_case(&right.to_string_lossy())
+    }
+    #[cfg(not(windows))]
+    {
+        left == right
+    }
 }
 
 fn default_use_file_name_as_database() -> bool {
@@ -124,6 +153,7 @@ impl Default for AppConfig {
             recreate_database: false,
             use_file_name_as_database: DEFAULT_USE_FILE_NAME_AS_DATABASE,
             last_backup_file: None,
+            recent_backup_files: Vec::new(),
         }
     }
 }
@@ -144,6 +174,33 @@ mod tests {
         assert!(!config.recreate_database);
         assert!(config.use_file_name_as_database);
         assert!(config.last_backup_file.is_none());
+        assert!(config.recent_backup_files.is_empty());
+    }
+
+    #[test]
+    fn remember_backup_file_keeps_newest_first_without_duplicates() {
+        let mut config = AppConfig::default();
+        config.remember_backup_file(PathBuf::from("a.sql"));
+        config.remember_backup_file(PathBuf::from("b.sql"));
+        config.remember_backup_file(PathBuf::from("a.sql"));
+
+        assert_eq!(
+            config.recent_backup_files,
+            vec![PathBuf::from("a.sql"), PathBuf::from("b.sql")]
+        );
+        assert_eq!(config.last_backup_file, Some(PathBuf::from("a.sql")));
+    }
+
+    #[test]
+    fn remember_backup_file_keeps_only_the_last_five() {
+        let mut config = AppConfig::default();
+        for index in 0..8 {
+            config.remember_backup_file(PathBuf::from(format!("{index}.sql")));
+        }
+
+        assert_eq!(config.recent_backup_files.len(), RECENT_BACKUP_FILES_LIMIT);
+        assert_eq!(config.recent_backup_files[0], PathBuf::from("7.sql"));
+        assert_eq!(config.recent_backup_files[4], PathBuf::from("3.sql"));
     }
 
     #[test]

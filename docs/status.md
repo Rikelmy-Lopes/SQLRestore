@@ -17,6 +17,7 @@ Features already done.
 - [x] Restore progress and result
 - [x] Separate loading spinner and progress bar
 - [x] Remember the last `.sql` file in the configuration
+- [x] Recent `.sql` files dropdown: last 5 used paths, without duplicates
 - [x] Optional use of the `.sql` file name as the database name
 - [x] Show the restore duration in the result
 - [x] Lock connection fields and database recreation checkbox while restoring

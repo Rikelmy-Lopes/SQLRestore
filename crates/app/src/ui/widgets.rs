@@ -132,8 +132,14 @@ impl<'a> TextField<'a> {
 }
 
 /// Draws a read-only box that shows the selected backup path.
-pub fn path_box(ui: &mut egui::Ui, palette: &Palette, text: &str, width: f32, has_file: bool) {
-    egui::Frame::new()
+pub fn path_box(
+    ui: &mut egui::Ui,
+    palette: &Palette,
+    text: &str,
+    width: f32,
+    has_file: bool,
+) -> egui::Response {
+    let response = egui::Frame::new()
         .fill(palette.input)
         .stroke(egui::Stroke::new(1.0, palette.border))
         .corner_radius(egui::CornerRadius::same(9))
@@ -147,7 +153,9 @@ pub fn path_box(ui: &mut egui::Ui, palette: &Palette, text: &str, width: f32, ha
                 palette.weak_text
             };
             ui.add(egui::Label::new(egui::RichText::new(text).size(13.5).color(color)).truncate());
-        });
+        })
+        .response;
+    response.interact(egui::Sense::click())
 }
 
 /// Button variants.
