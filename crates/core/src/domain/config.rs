@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 /// Languages shipped with the application.
-pub const SUPPORTED_LANGUAGES: &[&str] = &["en"];
+pub const SUPPORTED_LANGUAGES: &[&str] = &["en", "pt-BR"];
 
 /// Language used when the configured language is not available.
 pub const FALLBACK_LANGUAGE: &str = "en";

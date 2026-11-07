@@ -14,7 +14,7 @@ use sqlrestore_core::ports::logger::{LogLevel, Logger};
 use sqlrestore_core::ports::translation_provider::TranslationProvider;
 
 use crate::commands::AppCommands;
-use crate::i18n::{ENGLISH_JSON, I18n};
+use crate::i18n::{ENGLISH_JSON, I18n, PORTUGUESE_BR_JSON};
 use crate::ui::SqlRestoreApp;
 
 /// Starts the desktop application.
@@ -92,8 +92,10 @@ pub fn run() -> eframe::Result<()> {
 }
 
 fn translation_provider(logger: &dyn Logger) -> Arc<dyn TranslationProvider> {
-    match JsonTranslationProvider::from_json_sources([("en".to_string(), ENGLISH_JSON.to_string())])
-    {
+    match JsonTranslationProvider::from_json_sources([
+        ("en".to_string(), ENGLISH_JSON.to_string()),
+        ("pt-BR".to_string(), PORTUGUESE_BR_JSON.to_string()),
+    ]) {
         Ok(provider) => Arc::new(provider),
         Err(error) => {
             logger.log(

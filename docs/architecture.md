@@ -155,5 +155,6 @@ The program writes a log file to find problems after a restore fails.
 ## Internationalization
 
 - Files: `locales/<language-code>.json` (example: `en.json`).
+- Available languages: `en`, `pt-BR`.
 - Code uses keys only (example: `restore.button.start`).
 - English is the fallback language.

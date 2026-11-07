@@ -23,7 +23,7 @@ Features already done.
 - [x] Lock connection fields and database recreation checkbox while restoring
 - [x] Stream large `.sql` files and `COPY` data without loading the whole file
 - [x] Light and dark themes
-- [x] i18n with `.json` files (English)
+- [x] i18n with `.json` files (English and Brazilian Portuguese)
 - [x] Config file (`config.json` in the local application data folder): theme, language and connection
 - [x] Log file in the local application data folder with size limit and rotation (`Logger` port)
 - [x] Restore history in `history.json` (last 100 successful restores) with a dialog to view it
@@ -36,4 +36,3 @@ Features already done.
 ## Pending
 
 - [ ] Manual end-to-end restore test on a live PostgreSQL server
-- [ ] Additional languages

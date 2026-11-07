@@ -37,24 +37,51 @@ impl I18n {
 /// English dictionary embedded at compile time.
 pub(crate) const ENGLISH_JSON: &str = include_str!("../../../../locales/en.json");
 
+/// Brazilian Portuguese dictionary embedded at compile time.
+pub(crate) const PORTUGUESE_BR_JSON: &str = include_str!("../../../../locales/pt-BR.json");
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use sqlrestore_core::infrastructure::translations::JsonTranslationProvider;
 
     fn i18n() -> I18n {
-        let provider = JsonTranslationProvider::from_json_sources([(
-            "en".to_string(),
-            ENGLISH_JSON.to_string(),
-        )])
+        let provider = JsonTranslationProvider::from_json_sources([
+            ("en".to_string(), ENGLISH_JSON.to_string()),
+            ("pt-BR".to_string(), PORTUGUESE_BR_JSON.to_string()),
+        ])
         .expect("translations");
         I18n::new(Arc::new(provider), "en".to_string())
+    }
+
+    fn dictionary_keys(json: &str) -> Vec<String> {
+        let entries: std::collections::HashMap<String, String> =
+            serde_json::from_str(json).expect("dictionary");
+        let mut keys: Vec<String> = entries.into_keys().collect();
+        keys.sort();
+        keys
     }
 
     #[test]
     fn translates_known_keys() {
         assert_eq!(i18n().t("app.title"), "SQLRestore");
         assert_eq!(i18n().t("action.restore"), "Restore");
+    }
+
+    #[test]
+    fn translates_portuguese_keys() {
+        let mut i18n = i18n();
+        i18n.set_language("pt-BR".to_string());
+        assert_eq!(i18n.t("action.restore"), "Restaurar");
+        assert_eq!(i18n.t("connection.test"), "Testar conexão");
+    }
+
+    #[test]
+    fn dictionaries_have_the_same_keys() {
+        assert_eq!(
+            dictionary_keys(ENGLISH_JSON),
+            dictionary_keys(PORTUGUESE_BR_JSON)
+        );
     }
 
     #[test]
@@ -71,6 +98,24 @@ mod tests {
     }
 
     #[test]
+    fn portuguese_replaces_placeholders() {
+        let mut i18n = i18n();
+        i18n.set_language("pt-BR".to_string());
+        let text = i18n.t_args(
+            "status.success",
+            &[
+                ("statements", "2".to_string()),
+                ("bytes", "10".to_string()),
+                ("duration", "1.2 s".to_string()),
+            ],
+        );
+        assert_eq!(
+            text,
+            "Restauração concluída em 1.2 s: 2 comandos, 10 bytes."
+        );
+    }
+
+    #[test]
     fn english_file_has_every_required_key() {
         let required = [
             "app.title",
@@ -79,6 +124,7 @@ mod tests {
             "theme.dark",
             "language.label",
             "language.en",
+            "language.pt-BR",
             "connection.title",
             "connection.host",
             "connection.host.hint",

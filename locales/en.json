@@ -5,6 +5,7 @@
   "theme.dark": "Dark",
   "language.label": "Language",
   "language.en": "English",
+  "language.pt-BR": "Português (Brasil)",
   "connection.title": "Connection",
   "connection.host": "Host",
   "connection.host.hint": "localhost",
