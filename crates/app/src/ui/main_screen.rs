@@ -329,7 +329,7 @@ impl SqlRestoreApp {
 
     fn apply_backup_path(&mut self, path: PathBuf) {
         self.backup_path = Some(path.clone());
-        self.config.remember_backup_file(path);
+        self.config.select_backup_file(path);
         self.sync_database_from_backup();
         self.persist_config();
         if matches!(self.status, Status::Failed(_) | Status::Cancelled) {
@@ -395,6 +395,7 @@ impl SqlRestoreApp {
     }
 
     fn begin_restore(&mut self, request: RestoreRequest) {
+        self.config.remember_backup_file(request.file_path.clone());
         if let Err(error) = self.commands.save_config(self.config.clone()) {
             self.commands
                 .log_warning(&format!("Configuration could not be saved: {error}"));

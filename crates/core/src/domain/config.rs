@@ -117,6 +117,11 @@ pub struct AppConfig {
 }
 
 impl AppConfig {
+    /// Marks a backup file as selected without changing the recent list.
+    pub fn select_backup_file(&mut self, path: PathBuf) {
+        self.last_backup_file = Some(path);
+    }
+
     /// Adds a backup file to the recent list, newest first, without duplicates.
     pub fn remember_backup_file(&mut self, path: PathBuf) {
         self.last_backup_file = Some(path.clone());
@@ -175,6 +180,21 @@ mod tests {
         assert!(config.use_file_name_as_database);
         assert!(config.last_backup_file.is_none());
         assert!(config.recent_backup_files.is_empty());
+    }
+
+    #[test]
+    fn selecting_a_backup_file_does_not_change_the_recent_order() {
+        let mut config = AppConfig::default();
+        config.remember_backup_file(PathBuf::from("a.sql"));
+        config.remember_backup_file(PathBuf::from("b.sql"));
+
+        config.select_backup_file(PathBuf::from("c.sql"));
+
+        assert_eq!(
+            config.recent_backup_files,
+            vec![PathBuf::from("b.sql"), PathBuf::from("a.sql")]
+        );
+        assert_eq!(config.last_backup_file, Some(PathBuf::from("c.sql")));
     }
 
     #[test]

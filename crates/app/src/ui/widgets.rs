@@ -262,6 +262,18 @@ pub fn button(
         widgets.noninteractive.bg_stroke = egui::Stroke::new(1.0, palette.border);
         widgets.noninteractive.fg_stroke = egui::Stroke::new(1.0, palette.weak_text);
 
+        let text_width = egui::WidgetText::from(egui::RichText::new(text).size(14.5).strong())
+            .into_galley(
+                ui,
+                Some(egui::TextWrapMode::Extend),
+                f32::INFINITY,
+                egui::TextStyle::Button,
+            )
+            .size()
+            .x;
+        let width = (text_width + 2.0 * ui.spacing().button_padding.x).max(min_width);
+        let size = egui::vec2(width, 38.0);
+
         let button = egui::Button::new(
             egui::RichText::new(text)
                 .size(14.5)
@@ -269,9 +281,10 @@ pub fn button(
                 .color(text_color),
         )
         .corner_radius(egui::CornerRadius::same(9))
-        .min_size(egui::vec2(min_width, 38.0));
+        .min_size(size);
 
-        ui.add_enabled(enabled, button)
+        ui.add_enabled_ui(enabled, |ui| ui.add_sized(size, button))
+            .inner
     })
     .inner
 }
