@@ -11,8 +11,9 @@ pub use test_connection_task::ConnectionTestTask;
 use std::sync::Arc;
 
 use sqlrestore_core::application::commands::{
-    CancelRestoreCommandHandler, LoadConfigCommand, LoadConfigCommandHandler, LoadPasswordCommand,
-    LoadPasswordCommandHandler, LoadRestoreHistoryCommand, LoadRestoreHistoryCommandHandler,
+    CancelRestoreCommandHandler, ClearRestoreHistoryCommand, ClearRestoreHistoryCommandHandler,
+    LoadConfigCommand, LoadConfigCommandHandler, LoadPasswordCommand, LoadPasswordCommandHandler,
+    LoadRestoreHistoryCommand, LoadRestoreHistoryCommandHandler,
     RecordRestoreHistoryCommandHandler, RestoreCommandHandler, SaveConfigCommand,
     SaveConfigCommandHandler, SavePasswordCommand, SavePasswordCommandHandler,
     TestConnectionCommandHandler,
@@ -42,6 +43,7 @@ pub struct AppCommands {
     cancel: Arc<CancelRestoreCommandHandler>,
     record_history: Arc<RecordRestoreHistoryCommandHandler>,
     load_history: LoadRestoreHistoryCommandHandler,
+    clear_history: ClearRestoreHistoryCommandHandler,
     cancellation: Cancellation,
     logger: Arc<dyn Logger>,
 }
@@ -77,7 +79,8 @@ impl AppCommands {
             record_history: Arc::new(RecordRestoreHistoryCommandHandler::new(
                 history_repository.clone(),
             )),
-            load_history: LoadRestoreHistoryCommandHandler::new(history_repository),
+            load_history: LoadRestoreHistoryCommandHandler::new(history_repository.clone()),
+            clear_history: ClearRestoreHistoryCommandHandler::new(history_repository),
             cancellation,
             logger,
         }
@@ -125,6 +128,11 @@ impl AppCommands {
     /// Loads the restore history, oldest first.
     pub fn load_history(&self) -> Result<Vec<RestoreHistoryEntry>, HistoryError> {
         self.load_history.execute(LoadRestoreHistoryCommand)
+    }
+
+    /// Removes every entry from the restore history.
+    pub fn clear_history(&self) -> Result<(), HistoryError> {
+        self.clear_history.execute(ClearRestoreHistoryCommand)
     }
 
     /// Tests the connection outside the interface thread.

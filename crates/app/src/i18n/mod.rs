@@ -19,6 +19,11 @@ impl I18n {
         self.language = language;
     }
 
+    /// Active language code, such as `en` or `pt-BR`.
+    pub fn language(&self) -> &str {
+        &self.language
+    }
+
     /// Translates a key in the active language.
     pub fn t(&self, key: &str) -> String {
         self.provider.translate(key, &self.language)
@@ -151,6 +156,11 @@ mod tests {
             "history.title",
             "history.empty",
             "history.close",
+            "history.clear",
+            "history.clear.title",
+            "history.clear.warning",
+            "history.clear.cancel",
+            "history.clear.confirm",
             "history.date",
             "history.time",
             "history.file",

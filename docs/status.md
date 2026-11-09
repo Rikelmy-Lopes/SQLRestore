@@ -27,6 +27,8 @@ Features already done.
 - [x] Config file (`config.json` in the local application data folder): theme, language and connection
 - [x] Log file in the local application data folder with size limit and rotation (`Logger` port)
 - [x] Restore history in `history.json` (last 100 successful restores) with a dialog to view it
+- [x] Clear all restore history from the history dialog (with confirmation)
+- [x] History date and time formatted for the selected language (`MM/DD/YYYY` and 12-hour clock in English, `dd/MM/yyyy` and 24-hour clock in Brazilian Portuguese)
 - [x] Detailed PostgreSQL errors in the log and the exact failing source line
 - [x] Log entries on the terminal in debug builds
 - [x] Cross-platform support

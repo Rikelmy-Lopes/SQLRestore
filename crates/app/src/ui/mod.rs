@@ -1,5 +1,6 @@
 //! Main window of the application.
 
+mod date;
 mod duration;
 mod history;
 mod icon;
@@ -48,6 +49,7 @@ pub struct SqlRestoreApp {
     history_open: bool,
     history_entries: Vec<RestoreHistoryEntry>,
     history_error: Option<String>,
+    history_clear_confirmation: bool,
 }
 
 impl SqlRestoreApp {
@@ -88,6 +90,7 @@ impl SqlRestoreApp {
             history_open: false,
             history_entries: Vec::new(),
             history_error: None,
+            history_clear_confirmation: false,
         }
     }
 

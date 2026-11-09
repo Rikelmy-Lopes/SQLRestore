@@ -1,6 +1,7 @@
 //! Commands invoked by the interface. Each command has one handler.
 
 mod cancel_restore;
+mod clear_restore_history;
 mod load_config;
 mod load_password;
 mod load_restore_history;
@@ -11,6 +12,7 @@ mod save_password;
 mod test_connection;
 
 pub use cancel_restore::{CancelRestoreCommand, CancelRestoreCommandHandler};
+pub use clear_restore_history::{ClearRestoreHistoryCommand, ClearRestoreHistoryCommandHandler};
 pub use load_config::{LoadConfigCommand, LoadConfigCommandHandler};
 pub use load_password::{LoadPasswordCommand, LoadPasswordCommandHandler};
 pub use load_restore_history::{LoadRestoreHistoryCommand, LoadRestoreHistoryCommandHandler};

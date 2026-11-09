@@ -88,7 +88,7 @@ File `config.json`, saved in the local application data folder of each system:
 
 ## History
 
-Each successful restore adds one entry to `history.json` in the local application data folder. The entry has the file name, target database, connection, local date and time, and duration. The file is a JSON array, oldest first. When it has more than 100 entries, the oldest entries are removed. The History button opens a dialog with every entry, newest first.
+Each successful restore adds one entry to `history.json` in the local application data folder. The entry has the file name, target database, connection, local date and time, and duration. The date and time are stored as `YYYY-MM-DD` and `HH:MM:SS`, then displayed using the selected language conventions. The file is a JSON array, oldest first. When it has more than 100 entries, the oldest entries are removed. The History button opens a dialog with every entry, newest first. The dialog also clears every entry after user confirmation.
 
 | System | Path |
 |--------|------|
