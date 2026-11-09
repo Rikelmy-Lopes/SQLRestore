@@ -2,10 +2,13 @@
 
 mod duration;
 mod history;
+mod icon;
 mod main_screen;
 mod status;
 mod style;
 mod widgets;
+
+pub(crate) use icon::window_icon;
 
 use std::path::PathBuf;
 use std::sync::mpsc::TryRecvError;

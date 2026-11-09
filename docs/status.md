@@ -32,6 +32,8 @@ Features already done.
 - [x] Cross-platform support
 - [x] Styled interface: rounded inputs and buttons, centered card layout, colored success and error banners
 - [x] Automated tests for the core and the application
+- [x] Windows installer (NSIS) and Linux packages (`.deb`, `.AppImage`) with cargo-packager
+- [x] Release workflow that builds both platforms and publishes tagged releases
 
 ## Pending
 

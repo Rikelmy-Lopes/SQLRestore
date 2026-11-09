@@ -43,6 +43,8 @@ Follow the dependency direction and module responsibilities described in [Archit
 | Lint | `cargo clippy --workspace -- -D warnings` |
 | Check compilation | `cargo check --workspace` |
 | Release build | `cargo build --release` |
+| Windows installer | `cargo packager -p app --release -f nsis` |
+| Linux packages | `cargo packager -p app --release -f deb,appimage` |
 
 ## Rules
 

@@ -15,7 +15,7 @@ use sqlrestore_core::ports::translation_provider::TranslationProvider;
 
 use crate::commands::AppCommands;
 use crate::i18n::{ENGLISH_JSON, I18n, PORTUGUESE_BR_JSON};
-use crate::ui::SqlRestoreApp;
+use crate::ui::{SqlRestoreApp, window_icon};
 
 /// Starts the desktop application.
 pub fn run() -> eframe::Result<()> {
@@ -68,11 +68,16 @@ pub fn run() -> eframe::Result<()> {
     let i18n = I18n::new(translation_provider(&*logger), config.language.clone());
     let window_title = i18n.t("app.title");
 
+    let mut viewport = egui::ViewportBuilder::default()
+        .with_inner_size([760.0, 700.0])
+        .with_min_inner_size([600.0, 520.0])
+        .with_title(window_title);
+    if let Some(icon) = window_icon() {
+        viewport = viewport.with_icon(icon);
+    }
+
     let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default()
-            .with_inner_size([760.0, 700.0])
-            .with_min_inner_size([600.0, 520.0])
-            .with_title(window_title),
+        viewport,
         ..Default::default()
     };
 

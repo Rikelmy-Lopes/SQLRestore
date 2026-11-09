@@ -32,6 +32,28 @@ cargo test --workspace
 cargo build --release
 ```
 
+## Installers
+
+Installers are built with [cargo-packager](https://github.com/crabnebula-dev/cargo-packager). Install the tool first:
+
+```bash
+cargo install cargo-packager --locked
+```
+
+Windows (NSIS `setup.exe`):
+
+```bash
+cargo packager -p app --release -f nsis
+```
+
+Linux (`.deb` and `.AppImage`):
+
+```bash
+cargo packager -p app --release -f deb,appimage
+```
+
+Packages are written to `dist/`. On Windows, the NSIS toolchain is downloaded automatically. On Linux, install the development libraries required to build eframe, plus `patchelf` and `file` for AppImage packaging. Tagged releases (`v*`) build both platforms in GitHub Actions.
+
 ## Documentation
 
 - [AGENTS.md](AGENTS.md) (all rules)
