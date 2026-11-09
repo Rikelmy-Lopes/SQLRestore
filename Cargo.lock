@@ -176,7 +176,7 @@ dependencies = [
 
 [[package]]
 name = "app"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "chrono",
  "eframe",
@@ -3367,7 +3367,7 @@ dependencies = [
 
 [[package]]
 name = "sqlrestore-core"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "chrono",
  "keyring",
