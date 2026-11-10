@@ -34,6 +34,7 @@ Features already done.
 - [x] Log entries on the terminal in debug builds
 - [x] Cross-platform support
 - [x] Styled interface: rounded inputs and buttons, centered card layout, colored success and error banners
+- [x] Compact main screen layout: smaller fields, buttons and spacing to fit without vertical scrolling
 - [x] Automated tests for the core and the application
 - [x] Windows installer (NSIS) and Linux packages (`.deb`, `.AppImage`) with cargo-packager
 - [x] Release workflow that builds both platforms and publishes tagged releases

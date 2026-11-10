@@ -5,7 +5,7 @@ use eframe::egui;
 use super::style::Palette;
 
 /// Height of the styled text inputs.
-pub const FIELD_HEIGHT: f32 = 36.0;
+pub const FIELD_HEIGHT: f32 = 30.0;
 
 /// Tone of a status message.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -37,7 +37,7 @@ pub fn section_card<R>(
         .fill(palette.card)
         .stroke(egui::Stroke::new(1.0, palette.border))
         .corner_radius(egui::CornerRadius::same(12))
-        .inner_margin(egui::Margin::same(16))
+        .inner_margin(egui::Margin::same(12))
         .show(ui, |ui| {
             ui.set_width(ui.available_width());
             add_contents(ui)
@@ -49,11 +49,11 @@ pub fn section_card<R>(
 pub fn section_title(ui: &mut egui::Ui, palette: &Palette, text: &str) {
     ui.label(
         egui::RichText::new(text)
-            .size(16.5)
+            .size(15.0)
             .strong()
             .color(palette.text),
     );
-    ui.add_space(4.0);
+    ui.add_space(3.0);
 }
 
 /// Draws a small weak-colored hint.
@@ -105,7 +105,7 @@ impl<'a> TextField<'a> {
     /// Draws the label above a rounded input.
     pub fn show(self, ui: &mut egui::Ui, palette: &Palette) -> egui::Response {
         ui.vertical(|ui| {
-            ui.spacing_mut().item_spacing.y = 3.0;
+            ui.spacing_mut().item_spacing.y = 2.0;
             ui.set_width(self.width);
             ui.label(
                 egui::RichText::new(self.label)
@@ -113,11 +113,10 @@ impl<'a> TextField<'a> {
                     .strong()
                     .color(palette.weak_text),
             );
-            ui.add_space(1.0);
 
             let edit = egui::TextEdit::singleline(self.value)
                 .hint_text(self.hint.to_string())
-                .margin(egui::Margin::symmetric(11, 7))
+                .margin(egui::Margin::symmetric(10, 5))
                 .desired_width(self.width)
                 .min_size(egui::vec2(self.width, FIELD_HEIGHT))
                 .align(egui::Align2::LEFT_CENTER)
@@ -262,7 +261,7 @@ pub fn button(
         widgets.noninteractive.bg_stroke = egui::Stroke::new(1.0, palette.border);
         widgets.noninteractive.fg_stroke = egui::Stroke::new(1.0, palette.weak_text);
 
-        let text_width = egui::WidgetText::from(egui::RichText::new(text).size(14.5).strong())
+        let text_width = egui::WidgetText::from(egui::RichText::new(text).size(13.5).strong())
             .into_galley(
                 ui,
                 Some(egui::TextWrapMode::Extend),
@@ -271,12 +270,13 @@ pub fn button(
             )
             .size()
             .x;
+
         let width = (text_width + 2.0 * ui.spacing().button_padding.x).max(min_width);
-        let size = egui::vec2(width, 38.0);
+        let size = egui::vec2(width, 32.0);
 
         let button = egui::Button::new(
             egui::RichText::new(text)
-                .size(14.5)
+                .size(13.5)
                 .strong()
                 .color(text_color),
         )
@@ -305,9 +305,9 @@ pub fn message_banner(ui: &mut egui::Ui, palette: &Palette, text: &str, tone: Me
         .fill(fill)
         .stroke(stroke)
         .corner_radius(egui::CornerRadius::same(9))
-        .inner_margin(egui::Margin::symmetric(12, 10))
+        .inner_margin(egui::Margin::symmetric(10, 8))
         .show(ui, |ui| {
             ui.set_width(ui.available_width());
-            ui.label(egui::RichText::new(text).size(13.5).color(color));
+            ui.label(egui::RichText::new(text).size(13.0).color(color));
         });
 }

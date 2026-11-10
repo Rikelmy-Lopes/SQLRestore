@@ -71,7 +71,7 @@ impl SqlRestoreApp {
         let recreate_hint = self.i18n.t("connection.recreate_database.hint");
         let test_label = self.i18n.t("connection.test");
 
-        ui.add_space(12.0);
+        ui.add_space(8.0);
 
         widgets::section_card(ui, palette, |ui| {
             widgets::section_title(ui, palette, &connection_title);
@@ -134,11 +134,11 @@ impl SqlRestoreApp {
             .changed();
 
             if !port_is_valid {
-                ui.add_space(4.0);
+                ui.add_space(2.0);
                 widgets::error_text(ui, palette, &invalid_port);
             }
 
-            ui.add_space(8.0);
+            ui.add_space(6.0);
             use_file_name_changed = ui
                 .add_enabled(
                     can_edit,
@@ -150,7 +150,7 @@ impl SqlRestoreApp {
                 .changed();
             widgets::hint_text(ui, palette, &use_file_name_hint);
 
-            ui.add_space(6.0);
+            ui.add_space(4.0);
             recreate_changed = ui
                 .add_enabled(
                     can_edit,
@@ -162,7 +162,7 @@ impl SqlRestoreApp {
                 .changed();
             widgets::hint_text(ui, palette, &recreate_hint);
 
-            ui.add_space(10.0);
+            ui.add_space(8.0);
             let can_test = can_edit
                 && self.connection_test.is_none()
                 && self.config.connection.is_complete()
@@ -182,7 +182,7 @@ impl SqlRestoreApp {
             self.draw_connection_status(ui, palette);
         });
 
-        ui.add_space(12.0);
+        ui.add_space(8.0);
 
         let backup_title = self.i18n.t("backup.title");
         let select_label = self.i18n.t("backup.select");
@@ -233,12 +233,12 @@ impl SqlRestoreApp {
             });
 
             if let Some(size_text) = &size_text {
-                ui.add_space(6.0);
+                ui.add_space(4.0);
                 widgets::hint_text(ui, palette, size_text);
             }
         });
 
-        ui.add_space(12.0);
+        ui.add_space(8.0);
 
         let after_restore_title = self.i18n.t("after_restore.title");
         let after_restore_description = self.i18n.t("after_restore.description");
@@ -251,7 +251,7 @@ impl SqlRestoreApp {
         widgets::section_card(ui, palette, |ui| {
             widgets::section_title(ui, palette, &after_restore_title);
             widgets::hint_text(ui, palette, &after_restore_description);
-            ui.add_space(10.0);
+            ui.add_space(8.0);
 
             let label = if has_after_restore_script {
                 &after_restore_edit
@@ -263,7 +263,7 @@ impl SqlRestoreApp {
                 after_restore_clicked = true;
             }
 
-            ui.add_space(8.0);
+            ui.add_space(6.0);
             after_restore_changed = ui
                 .add_enabled(
                     can_edit,
@@ -276,7 +276,7 @@ impl SqlRestoreApp {
             widgets::hint_text(ui, palette, &after_restore_run_hint);
         });
 
-        ui.add_space(12.0);
+        ui.add_space(8.0);
 
         let can_restore = self.task.is_none()
             && self.config.connection.is_complete()
@@ -323,7 +323,7 @@ impl SqlRestoreApp {
             });
         });
 
-        ui.add_space(12.0);
+        ui.add_space(8.0);
 
         let result_title = self.i18n.t("result.title");
         widgets::section_card(ui, palette, |ui| {
@@ -341,14 +341,14 @@ impl SqlRestoreApp {
                             .show_percentage(),
                     );
                 });
-                ui.add_space(12.0);
+                ui.add_space(8.0);
             }
 
             let (message, tone) = self.status_message();
             widgets::message_banner(ui, palette, &message, tone);
         });
 
-        ui.add_space(16.0);
+        ui.add_space(12.0);
 
         if use_file_name_changed {
             self.sync_database_from_backup();
@@ -407,7 +407,7 @@ impl SqlRestoreApp {
             ),
         };
 
-        ui.add_space(8.0);
+        ui.add_space(6.0);
         widgets::message_banner(ui, palette, &message, tone);
     }
 
