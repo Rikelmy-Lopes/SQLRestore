@@ -152,6 +152,7 @@ mod tests {
             "backup.title",
             "backup.select",
             "backup.no_file",
+            "backup.size",
             "after_restore.title",
             "after_restore.description",
             "after_restore.open",

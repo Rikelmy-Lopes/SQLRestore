@@ -7,6 +7,7 @@ use sqlrestore_core::domain::restore::RestoreRequest;
 
 use super::SqlRestoreApp;
 use super::duration::format_duration;
+use super::file_size::{self, format_file_size};
 use super::status::{ConnectionStatus, Status};
 use super::style::Palette;
 use super::widgets::{self, ButtonKind, MessageTone, TextField};
@@ -189,6 +190,10 @@ impl SqlRestoreApp {
             || self.i18n.t("backup.no_file"),
             |path| path.display().to_string(),
         );
+        let size_text = self.backup_size.map(|bytes| {
+            self.i18n
+                .t_args("backup.size", &[("size", format_file_size(bytes))])
+        });
         let mut selected_recent = None;
 
         widgets::section_card(ui, palette, |ui| {
@@ -226,6 +231,11 @@ impl SqlRestoreApp {
                     select_clicked = true;
                 }
             });
+
+            if let Some(size_text) = &size_text {
+                ui.add_space(6.0);
+                widgets::hint_text(ui, palette, size_text);
+            }
         });
 
         ui.add_space(12.0);
@@ -371,6 +381,7 @@ impl SqlRestoreApp {
     }
 
     fn apply_backup_path(&mut self, path: PathBuf) {
+        self.backup_size = file_size::file_size(&path);
         self.backup_path = Some(path.clone());
         self.config.select_backup_file(path);
         self.sync_database_from_backup();

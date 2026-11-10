@@ -30,7 +30,7 @@ The theme is saved in `config.json`.
 
 1. **Top bar:** app title, history button, theme switch, language selector.
 2. **Connection:** host, port, user, password, database. A test button checks the connection before restoring.
-3. **Backup file:** file path and a button to select the `.sql` file. Clicking the path shows the last five used files.
+3. **Backup file:** file path, its size in MB or GB, and a button to select the `.sql` file. Clicking the path shows the last five used files.
 4. **Action:** restore button and cancel button.
 5. **Result area:** loading spinner, progress bar and success or error message. The success message includes the restore duration.
 6. **Database recreation:** a checkbox in the connection area enables deleting and recreating the target database before restoring. The confirmation dialog appears before every restore.

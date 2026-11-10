@@ -28,6 +28,7 @@
   "backup.title": "Backup file",
   "backup.select": "Select",
   "backup.no_file": "No file selected",
+  "backup.size": "File size: {size}",
   "after_restore.title": "After-restore script",
   "after_restore.description": "Optional SQL that runs only after a successful restore.",
   "after_restore.open": "Add script",

@@ -3,6 +3,7 @@
 mod after_restore;
 mod date;
 mod duration;
+mod file_size;
 mod history;
 mod icon;
 mod main_screen;
@@ -40,6 +41,7 @@ pub struct SqlRestoreApp {
     port_input: String,
     password: String,
     backup_path: Option<PathBuf>,
+    backup_size: Option<u64>,
     status: Status,
     progress: f32,
     task: Option<RestoreTask>,
@@ -69,6 +71,7 @@ impl SqlRestoreApp {
             .last_backup_file
             .clone()
             .filter(|path| path.is_file());
+        let backup_size = backup_path.as_deref().and_then(file_size::file_size);
         let mut config = config;
         if config.use_file_name_as_database
             && let Some(name) = backup_path.as_deref().and_then(database_name_from_backup)
@@ -83,6 +86,7 @@ impl SqlRestoreApp {
             port_input,
             password,
             backup_path,
+            backup_size,
             status: Status::Idle,
             progress: 0.0,
             task: None,
