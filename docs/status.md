@@ -41,3 +41,4 @@ Features already done.
 ## Pending
 
 - [ ] Manual end-to-end restore test on a live PostgreSQL server
+- [x] Close confirmation while a restore is running

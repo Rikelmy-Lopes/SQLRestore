@@ -55,6 +55,7 @@ pub struct SqlRestoreApp {
     history_entries: Vec<RestoreHistoryEntry>,
     history_error: Option<String>,
     history_clear_confirmation: bool,
+    close_confirmation: bool,
 }
 
 impl SqlRestoreApp {
@@ -100,6 +101,18 @@ impl SqlRestoreApp {
             history_entries: Vec::new(),
             history_error: None,
             history_clear_confirmation: false,
+            close_confirmation: false,
+        }
+    }
+
+    /// Intercepts the window close request while a restore is running.
+    fn handle_close_request(&mut self, context: &egui::Context) {
+        if !context.input(|input| input.viewport().close_requested()) {
+            return;
+        }
+        if close_decision(self.task.is_some()) == CloseDecision::Confirm {
+            context.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+            self.close_confirmation = true;
         }
     }
 
@@ -271,6 +284,7 @@ impl SqlRestoreApp {
 
 impl eframe::App for SqlRestoreApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        self.handle_close_request(ui.ctx());
         self.poll_restore_events();
         self.poll_connection_test();
 
@@ -292,5 +306,38 @@ impl eframe::App for SqlRestoreApp {
         self.draw_recreate_confirmation(&confirmation_context);
         let history_context = ui.ctx().clone();
         self.draw_history_dialog(&history_context);
+        let close_context = ui.ctx().clone();
+        self.draw_close_confirmation(&close_context);
+    }
+}
+
+/// Action taken when the window receives a close request.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum CloseDecision {
+    Close,
+    Confirm,
+}
+
+/// A running restore requires confirmation before the window closes.
+pub(crate) fn close_decision(restoring: bool) -> CloseDecision {
+    if restoring {
+        CloseDecision::Confirm
+    } else {
+        CloseDecision::Close
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn close_is_direct_when_no_restore_runs() {
+        assert_eq!(close_decision(false), CloseDecision::Close);
+    }
+
+    #[test]
+    fn close_requires_confirmation_while_restoring() {
+        assert_eq!(close_decision(true), CloseDecision::Confirm);
     }
 }

@@ -555,6 +555,86 @@ impl SqlRestoreApp {
         }
     }
 
+    pub(super) fn draw_close_confirmation(&mut self, context: &egui::Context) {
+        if !self.close_confirmation {
+            return;
+        }
+        let palette = Palette::for_theme(self.config.theme);
+
+        let title = self.i18n.t("close.title");
+        let warning = self.i18n.t("close.warning");
+        let cancel_label = self.i18n.t("close.cancel");
+        let confirm_label = self.i18n.t("close.confirm");
+
+        let mut confirm = false;
+        let mut cancel = false;
+        let response =
+            egui::Modal::new(egui::Id::unique("close_restore_confirmation")).show(context, |ui| {
+                ui.set_max_width(400.0);
+                ui.label(
+                    egui::RichText::new(title)
+                        .size(17.0)
+                        .strong()
+                        .color(palette.error),
+                );
+                ui.add_space(6.0);
+                ui.label(
+                    egui::RichText::new(warning)
+                        .size(13.5)
+                        .color(palette.weak_text),
+                );
+                ui.add_space(12.0);
+                ui.vertical_centered(|ui| {
+                    ui.horizontal(|ui| {
+                        let cancel_width = 150.0;
+                        let confirm_width = 210.0;
+                        let actions_width = cancel_width + 12.0 + confirm_width;
+                        ui.spacing_mut().item_spacing.x = 12.0;
+                        let side = ((ui.available_width() - actions_width) / 2.0
+                            - ui.spacing().item_spacing.x)
+                            .max(0.0);
+                        ui.add_space(side);
+                        if widgets::button(
+                            ui,
+                            &palette,
+                            &cancel_label,
+                            ButtonKind::Secondary,
+                            true,
+                            cancel_width,
+                        )
+                        .clicked()
+                        {
+                            cancel = true;
+                        }
+                        if widgets::button(
+                            ui,
+                            &palette,
+                            &confirm_label,
+                            ButtonKind::Danger,
+                            true,
+                            confirm_width,
+                        )
+                        .clicked()
+                        {
+                            confirm = true;
+                        }
+                    });
+                });
+            });
+
+        if response.should_close() {
+            cancel = true;
+        }
+
+        if confirm {
+            self.close_confirmation = false;
+            self.cancel_restore();
+            context.send_viewport_cmd(egui::ViewportCommand::Close);
+        } else if cancel {
+            self.close_confirmation = false;
+        }
+    }
+
     fn cancel_restore(&mut self) {
         let Some(task) = self.task.as_ref() else {
             return;
