@@ -16,6 +16,7 @@ chrono = { version = "0.4", default-features = false, features = ["clock"] }
 postgres = "0.19"
 eframe = { version = "0.37", default-features = false, features = [
     "accesskit",
+    "clipboard",
     "default_fonts",
     "glow",
     "system_fonts",
