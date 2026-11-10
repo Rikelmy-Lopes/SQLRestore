@@ -102,6 +102,16 @@ mod tests {
             unreachable!("the restore is not used by the connection test")
         }
 
+        fn execute_script(
+            &self,
+            _connection: &ConnectionSettings,
+            _password: &str,
+            _script: &str,
+            _cancellation: &crate::domain::cancellation::Cancellation,
+        ) -> Result<(), RestoreError> {
+            unreachable!("the after-restore script is not used by the connection test")
+        }
+
         fn test_connection(
             &self,
             _connection: &ConnectionSettings,

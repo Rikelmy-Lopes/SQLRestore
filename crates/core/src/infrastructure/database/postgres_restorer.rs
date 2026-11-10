@@ -1,6 +1,7 @@
 //! PostgreSQL restore adapter.
 
 use std::fs::{self, File};
+use std::io::Read;
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -53,6 +54,21 @@ impl PostgresRestorer {
         config
             .connect(NoTls)
             .map_err(|error| RestoreError::Connection(error.to_string()))
+    }
+
+    fn set_cancel_token(&self, token: CancelToken) -> Result<(), RestoreError> {
+        let mut current = self
+            .cancel_token
+            .lock()
+            .map_err(|_| RestoreError::Cancel("cancel state is poisoned".to_string()))?;
+        *current = Some(token);
+        Ok(())
+    }
+
+    fn clear_cancel_token(&self) {
+        if let Ok(mut token) = self.cancel_token.lock() {
+            *token = None;
+        }
     }
 
     fn recreate_database(request: &RestoreRequest) -> Result<(), RestoreError> {
@@ -110,13 +126,7 @@ impl DatabaseRestorer for PostgresRestorer {
         }
 
         let mut client = Self::connect(request, &request.connection.database)?;
-        {
-            let mut token = self
-                .cancel_token
-                .lock()
-                .map_err(|_| RestoreError::Cancel("cancel state is poisoned".to_string()))?;
-            *token = Some(client.cancel_token());
-        }
+        self.set_cancel_token(client.cancel_token())?;
 
         let outcome = run_chunks(
             &mut client,
@@ -126,11 +136,41 @@ impl DatabaseRestorer for PostgresRestorer {
             progress,
         );
 
-        if let Ok(mut token) = self.cancel_token.lock() {
-            *token = None;
-        }
+        self.clear_cancel_token();
 
         outcome
+    }
+
+    fn execute_script(
+        &self,
+        connection: &ConnectionSettings,
+        password: &str,
+        script: &str,
+        cancellation: &Cancellation,
+    ) -> Result<(), RestoreError> {
+        if script.trim().is_empty() {
+            return Ok(());
+        }
+        if cancellation.is_cancelled() {
+            return Err(RestoreError::Cancelled);
+        }
+
+        let mut client = Self::connect_to(connection, password, &connection.database)?;
+        self.set_cancel_token(client.cancel_token())?;
+
+        let total_bytes = u64::try_from(script.len()).unwrap_or(u64::MAX);
+        let mut reader = SqlScriptReader::new(script.as_bytes());
+        let outcome = run_chunks(
+            &mut client,
+            &mut reader,
+            total_bytes,
+            cancellation,
+            &|_progress| {},
+        );
+
+        self.clear_cancel_token();
+
+        outcome.map(|_report| ())
     }
 
     fn test_connection(
@@ -177,9 +217,9 @@ impl DatabaseRestorer for PostgresRestorer {
     }
 }
 
-fn run_chunks(
+fn run_chunks<R: Read>(
     client: &mut Client,
-    script: &mut SqlScriptReader<File>,
+    script: &mut SqlScriptReader<R>,
     total_bytes: u64,
     cancellation: &Cancellation,
     progress: &dyn Fn(RestoreProgress),
@@ -333,6 +373,14 @@ mod tests {
     }
 
     #[test]
+    fn blank_script_does_not_connect() {
+        let restorer = PostgresRestorer::new();
+        let connection = crate::domain::config::ConnectionSettings::default();
+        let result = restorer.execute_script(&connection, "", "  \n", &Cancellation::new());
+        assert!(result.is_ok());
+    }
+
+    #[test]
     fn invalid_request_is_rejected_before_connecting() {
         let restorer = PostgresRestorer::new();
         let request = RestoreRequest {
@@ -340,6 +388,7 @@ mod tests {
             password: String::new(),
             file_path: "missing.sql".into(),
             recreate_database: false,
+            after_restore_script: None,
         };
         let result = restorer.restore(&request, &Cancellation::new(), &|_progress| {});
         assert!(matches!(result, Err(RestoreError::InvalidRequest(_))));
@@ -382,6 +431,7 @@ mod tests {
             password: String::new(),
             file_path: path,
             recreate_database: true,
+            after_restore_script: None,
         };
         let result = restorer.restore(&request, &Cancellation::new(), &|_progress| {});
         assert!(matches!(result, Err(RestoreError::InvalidRequest(_))));

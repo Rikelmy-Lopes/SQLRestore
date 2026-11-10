@@ -1,5 +1,6 @@
 //! Main window of the application.
 
+mod after_restore;
 mod date;
 mod duration;
 mod history;
@@ -45,6 +46,8 @@ pub struct SqlRestoreApp {
     connection_test: Option<ConnectionTestTask>,
     connection_status: ConnectionStatus,
     pending_restore: Option<RestoreRequest>,
+    after_restore_draft: String,
+    after_restore_dialog_open: bool,
     select_backup: SelectBackupCommandHandler,
     history_open: bool,
     history_entries: Vec<RestoreHistoryEntry>,
@@ -86,6 +89,8 @@ impl SqlRestoreApp {
             connection_test: None,
             connection_status: ConnectionStatus::Idle,
             pending_restore: None,
+            after_restore_draft: String::new(),
+            after_restore_dialog_open: false,
             select_backup: SelectBackupCommandHandler,
             history_open: false,
             history_entries: Vec::new(),
@@ -277,6 +282,8 @@ impl eframe::App for SqlRestoreApp {
             });
         });
 
+        let after_restore_context = ui.ctx().clone();
+        self.draw_after_restore_dialog(&after_restore_context);
         let confirmation_context = ui.ctx().clone();
         self.draw_recreate_confirmation(&confirmation_context);
         let history_context = ui.ctx().clone();

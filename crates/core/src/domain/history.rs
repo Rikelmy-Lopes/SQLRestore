@@ -83,6 +83,7 @@ mod tests {
             password: "secret".to_string(),
             file_path: PathBuf::from("C:/backups/shop.sql"),
             recreate_database: false,
+            after_restore_script: None,
         }
     }
 

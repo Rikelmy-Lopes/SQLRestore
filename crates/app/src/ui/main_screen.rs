@@ -49,6 +49,8 @@ impl SqlRestoreApp {
         let mut test_clicked = false;
         let mut restore_clicked = false;
         let mut cancel_clicked = false;
+        let mut after_restore_clicked = false;
+        let mut after_restore_changed = false;
 
         let connection_title = self.i18n.t("connection.title");
         let host_label = self.i18n.t("connection.host");
@@ -228,6 +230,44 @@ impl SqlRestoreApp {
 
         ui.add_space(12.0);
 
+        let after_restore_title = self.i18n.t("after_restore.title");
+        let after_restore_description = self.i18n.t("after_restore.description");
+        let after_restore_open = self.i18n.t("after_restore.open");
+        let after_restore_edit = self.i18n.t("after_restore.edit");
+        let after_restore_run = self.i18n.t("after_restore.run");
+        let after_restore_run_hint = self.i18n.t("after_restore.run.hint");
+        let has_after_restore_script = !self.config.after_restore_script.trim().is_empty();
+
+        widgets::section_card(ui, palette, |ui| {
+            widgets::section_title(ui, palette, &after_restore_title);
+            widgets::hint_text(ui, palette, &after_restore_description);
+            ui.add_space(10.0);
+
+            let label = if has_after_restore_script {
+                &after_restore_edit
+            } else {
+                &after_restore_open
+            };
+            if widgets::button(ui, palette, label, ButtonKind::Secondary, can_edit, 150.0).clicked()
+            {
+                after_restore_clicked = true;
+            }
+
+            ui.add_space(8.0);
+            after_restore_changed = ui
+                .add_enabled(
+                    can_edit,
+                    egui::Checkbox::new(
+                        &mut self.config.run_after_restore_script,
+                        after_restore_run.as_str(),
+                    ),
+                )
+                .changed();
+            widgets::hint_text(ui, palette, &after_restore_run_hint);
+        });
+
+        ui.add_space(12.0);
+
         let can_restore = self.task.is_none()
             && self.config.connection.is_complete()
             && port.is_some()
@@ -304,7 +344,7 @@ impl SqlRestoreApp {
             self.sync_database_from_backup();
             self.persist_config();
         }
-        if recreate_changed {
+        if recreate_changed || after_restore_changed {
             self.persist_config();
         }
         if connection_changed && self.connection_test.is_none() {
@@ -318,6 +358,9 @@ impl SqlRestoreApp {
         }
         if let Some(path) = selected_recent {
             self.apply_backup_path(path);
+        }
+        if after_restore_clicked {
+            self.open_after_restore_dialog();
         }
         if restore_clicked && let Some(port) = port {
             self.start_restore(port);
@@ -375,11 +418,19 @@ impl SqlRestoreApp {
 
         let mut connection = self.config.connection.clone();
         connection.port = port;
+        let after_restore_script = if self.config.run_after_restore_script
+            && !self.config.after_restore_script.trim().is_empty()
+        {
+            Some(self.config.after_restore_script.clone())
+        } else {
+            None
+        };
         let request = RestoreRequest {
             connection: connection.clone(),
             password: self.password.clone(),
             file_path,
             recreate_database: self.config.recreate_database,
+            after_restore_script,
         };
 
         if let Err(error) = request.validate() {

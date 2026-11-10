@@ -15,6 +15,8 @@ pub struct RestoreRequest {
     pub file_path: PathBuf,
     /// Drops and recreates the target database before restoring.
     pub recreate_database: bool,
+    /// SQL pasted by the user that runs only after a successful restore.
+    pub after_restore_script: Option<String>,
 }
 
 impl fmt::Debug for RestoreRequest {
@@ -25,6 +27,10 @@ impl fmt::Debug for RestoreRequest {
             .field("password", &"***")
             .field("file_path", &self.file_path)
             .field("recreate_database", &self.recreate_database)
+            .field(
+                "after_restore_script",
+                &self.after_restore_script.as_ref().map(|_| "***"),
+            )
             .finish()
     }
 }
@@ -111,6 +117,7 @@ mod tests {
             password: "secret".to_string(),
             file_path: path,
             recreate_database: false,
+            after_restore_script: None,
         }
     }
 

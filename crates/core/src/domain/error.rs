@@ -40,6 +40,8 @@ pub enum RestoreError {
     Database { line: usize, message: String },
     #[error("could not recreate the database: {0}")]
     DatabaseRecreate(String),
+    #[error("the after-restore script failed: {0}")]
+    AfterRestoreScript(String),
     #[error("the restore was cancelled")]
     Cancelled,
     #[error("the database query could not be cancelled: {0}")]

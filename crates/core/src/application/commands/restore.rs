@@ -59,13 +59,19 @@ impl RestoreCommandHandler {
         }
 
         let started = Instant::now();
-        let result = self
+        let result = match self
             .restorer
             .restore(&request, &self.cancellation, progress)
-            .map(|mut report| {
-                report.elapsed = started.elapsed();
-                report
-            });
+        {
+            Ok(mut report) => match self.run_after_restore_script(&request) {
+                Ok(()) => {
+                    report.elapsed = started.elapsed();
+                    Ok(report)
+                }
+                Err(error) => Err(error),
+            },
+            Err(error) => Err(error),
+        };
 
         match &result {
             Ok(report) => self.logger.log(
@@ -93,6 +99,44 @@ impl RestoreCommandHandler {
 
         result
     }
+
+    /// Runs the optional script after the backup restore has succeeded.
+    fn run_after_restore_script(&self, request: &RestoreRequest) -> Result<(), RestoreError> {
+        let Some(script) = request.after_restore_script.as_deref() else {
+            return Ok(());
+        };
+        if script.trim().is_empty() {
+            return Ok(());
+        }
+
+        self.logger
+            .log(LogLevel::Info, "After-restore script started");
+
+        match self.restorer.execute_script(
+            &request.connection,
+            &request.password,
+            script,
+            &self.cancellation,
+        ) {
+            Ok(()) => {
+                self.logger
+                    .log(LogLevel::Info, "After-restore script finished");
+                Ok(())
+            }
+            Err(RestoreError::Cancelled) => {
+                self.logger
+                    .log(LogLevel::Info, "After-restore script cancelled");
+                Err(RestoreError::Cancelled)
+            }
+            Err(error) => {
+                self.logger.log(
+                    LogLevel::Error,
+                    &format!("After-restore script failed: {error}"),
+                );
+                Err(RestoreError::AfterRestoreScript(error.to_string()))
+            }
+        }
+    }
 }
 
 fn log_start(logger: &dyn Logger, request: &RestoreRequest) {
@@ -116,7 +160,7 @@ mod tests {
     use crate::domain::config::ConnectionSettings;
     use std::path::PathBuf;
     use std::sync::Mutex;
-    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
     #[derive(Default)]
     struct MemoryLogger {
@@ -134,7 +178,9 @@ mod tests {
 
     struct FakeRestorer {
         result: Mutex<Option<Result<RestoreReport, RestoreError>>>,
+        script_result: Mutex<Option<Result<(), RestoreError>>>,
         progress: AtomicBool,
+        script_calls: AtomicUsize,
     }
 
     impl FakeRestorer {
@@ -145,7 +191,9 @@ mod tests {
                     bytes: 10,
                     elapsed: std::time::Duration::ZERO,
                 }))),
+                script_result: Mutex::new(Some(Ok(()))),
                 progress: AtomicBool::new(false),
+                script_calls: AtomicUsize::new(0),
             }
         }
 
@@ -155,15 +203,33 @@ mod tests {
                     line: 4,
                     message: "syntax error".to_string(),
                 }))),
+                script_result: Mutex::new(Some(Ok(()))),
                 progress: AtomicBool::new(false),
+                script_calls: AtomicUsize::new(0),
             }
+        }
+
+        fn script_failure() -> Self {
+            let restorer = Self::success();
+            *restorer.script_result.lock().expect("script result lock") =
+                Some(Err(RestoreError::Database {
+                    line: 1,
+                    message: "script syntax error".to_string(),
+                }));
+            restorer
         }
 
         fn cancelled() -> Self {
             Self {
                 result: Mutex::new(Some(Err(RestoreError::Cancelled))),
+                script_result: Mutex::new(Some(Ok(()))),
                 progress: AtomicBool::new(false),
+                script_calls: AtomicUsize::new(0),
             }
+        }
+
+        fn script_calls(&self) -> usize {
+            self.script_calls.load(Ordering::SeqCst)
         }
     }
 
@@ -184,6 +250,21 @@ mod tests {
                 .expect("result lock")
                 .take()
                 .expect("result present")
+        }
+
+        fn execute_script(
+            &self,
+            _connection: &ConnectionSettings,
+            _password: &str,
+            _script: &str,
+            _cancellation: &Cancellation,
+        ) -> Result<(), RestoreError> {
+            self.script_calls.fetch_add(1, Ordering::SeqCst);
+            self.script_result
+                .lock()
+                .expect("script result lock")
+                .take()
+                .expect("script result present")
         }
 
         fn test_connection(
@@ -211,13 +292,17 @@ mod tests {
             password: "top-secret".to_string(),
             file_path: PathBuf::from("backup.sql"),
             recreate_database: false,
+            after_restore_script: None,
         }
     }
 
     fn handler(restorer: FakeRestorer) -> (RestoreCommandHandler, Arc<MemoryLogger>) {
+        handler_with(Arc::new(restorer))
+    }
+
+    fn handler_with(restorer: Arc<FakeRestorer>) -> (RestoreCommandHandler, Arc<MemoryLogger>) {
         let logger = Arc::new(MemoryLogger::default());
-        let handler =
-            RestoreCommandHandler::new(Arc::new(restorer), logger.clone(), Cancellation::new());
+        let handler = RestoreCommandHandler::new(restorer, logger.clone(), Cancellation::new());
         (handler, logger)
     }
 
@@ -285,5 +370,92 @@ mod tests {
             seen_clone.store(true, Ordering::SeqCst);
         });
         assert!(seen.load(Ordering::SeqCst));
+    }
+
+    fn request_with_script(script: &str) -> RestoreRequest {
+        let mut request = request();
+        request.after_restore_script = Some(script.to_string());
+        request
+    }
+
+    #[test]
+    fn after_restore_script_runs_after_a_successful_restore() {
+        let restorer = Arc::new(FakeRestorer::success());
+        let (handler, logger) = handler_with(restorer.clone());
+        let result = handler.execute(
+            RestoreCommand {
+                request: request_with_script("SELECT 1;"),
+            },
+            &|_| {},
+        );
+        assert!(result.is_ok());
+        assert_eq!(restorer.script_calls(), 1);
+        assert!(
+            messages(&logger)
+                .iter()
+                .any(|message| message.contains("After-restore script finished"))
+        );
+    }
+
+    #[test]
+    fn after_restore_script_does_not_run_when_the_restore_fails() {
+        let restorer = Arc::new(FakeRestorer::failure());
+        let (handler, _logger) = handler_with(restorer.clone());
+        let result = handler.execute(
+            RestoreCommand {
+                request: request_with_script("SELECT 1;"),
+            },
+            &|_| {},
+        );
+        assert!(result.is_err());
+        assert_eq!(restorer.script_calls(), 0);
+    }
+
+    #[test]
+    fn after_restore_script_does_not_run_when_the_restore_is_cancelled() {
+        let restorer = Arc::new(FakeRestorer::cancelled());
+        let (handler, _logger) = handler_with(restorer.clone());
+        let result = handler.execute(
+            RestoreCommand {
+                request: request_with_script("SELECT 1;"),
+            },
+            &|_| {},
+        );
+        assert!(matches!(result, Err(RestoreError::Cancelled)));
+        assert_eq!(restorer.script_calls(), 0);
+    }
+
+    #[test]
+    fn after_restore_script_failure_fails_the_command() {
+        let (handler, logger) = handler(FakeRestorer::script_failure());
+        let result = handler.execute(
+            RestoreCommand {
+                request: request_with_script("SELECT 1;"),
+            },
+            &|_| {},
+        );
+        assert!(matches!(
+            result,
+            Err(RestoreError::AfterRestoreScript(message)) if message.contains("script syntax error")
+        ));
+        assert!(
+            messages(&logger)
+                .iter()
+                .any(|message| message.contains("After-restore script failed"))
+        );
+    }
+
+    #[test]
+    fn blank_after_restore_script_is_ignored() {
+        let restorer = Arc::new(FakeRestorer::success());
+        let (handler, _logger) = handler_with(restorer.clone());
+        let result = handler.execute(
+            RestoreCommand {
+                request: request_with_script("   \n\t"),
+            },
+            &|_| {},
+        );
+        assert!(result.is_ok());
+        assert_eq!(restorer.script_calls(), 0);
     }
 }

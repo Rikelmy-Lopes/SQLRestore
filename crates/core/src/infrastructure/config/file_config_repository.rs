@@ -109,6 +109,17 @@ fn config_from_value(value: &Value) -> AppConfig {
 
     let recent_backup_files = recent_files_from_value(value, last_backup_file.as_ref());
 
+    let after_restore_script = value
+        .get("after_restore_script")
+        .and_then(Value::as_str)
+        .unwrap_or(&defaults.after_restore_script)
+        .to_string();
+
+    let run_after_restore_script = value
+        .get("run_after_restore_script")
+        .and_then(Value::as_bool)
+        .unwrap_or(defaults.run_after_restore_script);
+
     AppConfig {
         theme,
         language,
@@ -117,6 +128,8 @@ fn config_from_value(value: &Value) -> AppConfig {
         use_file_name_as_database,
         last_backup_file,
         recent_backup_files,
+        after_restore_script,
+        run_after_restore_script,
     }
 }
 
@@ -226,6 +239,8 @@ mod tests {
                 PathBuf::from("C:/backups/shop.sql"),
                 PathBuf::from("C:/backups/other.sql"),
             ],
+            after_restore_script: "CREATE INDEX idx_shop ON shop (id);".to_string(),
+            run_after_restore_script: true,
         };
         repository.save(&config).expect("save");
         assert_eq!(repository.load().expect("load"), config);
@@ -329,6 +344,19 @@ mod tests {
         )
         .expect("write");
         assert!(!repository.load().expect("load").recreate_database);
+    }
+
+    #[test]
+    fn invalid_after_restore_values_fall_back() {
+        let (directory, repository) = repository();
+        fs::write(
+            directory.path().join("config.json"),
+            r#"{"after_restore_script": 42, "run_after_restore_script": "yes"}"#,
+        )
+        .expect("write");
+        let config = repository.load().expect("load");
+        assert!(config.after_restore_script.is_empty());
+        assert!(!config.run_after_restore_script);
     }
 
     #[test]

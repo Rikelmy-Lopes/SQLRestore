@@ -114,6 +114,12 @@ pub struct AppConfig {
     /// Most recently used backup files, newest first.
     #[serde(default)]
     pub recent_backup_files: Vec<PathBuf>,
+    /// SQL pasted by the user that can run after a successful restore.
+    #[serde(default)]
+    pub after_restore_script: String,
+    /// Runs [`Self::after_restore_script`] after a successful restore.
+    #[serde(default)]
+    pub run_after_restore_script: bool,
 }
 
 impl AppConfig {
@@ -159,6 +165,8 @@ impl Default for AppConfig {
             use_file_name_as_database: DEFAULT_USE_FILE_NAME_AS_DATABASE,
             last_backup_file: None,
             recent_backup_files: Vec::new(),
+            after_restore_script: String::new(),
+            run_after_restore_script: false,
         }
     }
 }
@@ -180,6 +188,8 @@ mod tests {
         assert!(config.use_file_name_as_database);
         assert!(config.last_backup_file.is_none());
         assert!(config.recent_backup_files.is_empty());
+        assert!(config.after_restore_script.is_empty());
+        assert!(!config.run_after_restore_script);
     }
 
     #[test]

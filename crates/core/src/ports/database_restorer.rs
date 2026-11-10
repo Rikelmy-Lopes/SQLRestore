@@ -15,6 +15,15 @@ pub trait DatabaseRestorer: Send + Sync {
         progress: &dyn Fn(RestoreProgress),
     ) -> Result<RestoreReport, RestoreError>;
 
+    /// Runs a user-provided SQL script, such as the after-restore script.
+    fn execute_script(
+        &self,
+        connection: &ConnectionSettings,
+        password: &str,
+        script: &str,
+        cancellation: &Cancellation,
+    ) -> Result<(), RestoreError>;
+
     /// Checks that the connection values can open a database session.
     ///
     /// With `recreate_database`, the target database may not exist yet, so the
